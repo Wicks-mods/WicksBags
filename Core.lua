@@ -437,6 +437,14 @@ A:RegisterSlash(function(_, input)
         return
     end
     if input == "alts" and WB.AltViewer then WB.AltViewer:Toggle() return end
+    if input == "bank" then
+        -- Written after three attempts at the bank were each a guess,
+        -- and never wired to anything until someone needed it.
+        if WB.Bank and WB.Bank.Diagnose then
+            WB.Bank:Diagnose(function(line) A:Print(line) end)
+        else A:Print("no bank diagnostic on this build.") end
+        return
+    end
     if input == "defaultbank" then
         -- Suppressing Blizzard's bank window means writing to their
         -- BankFrame: alpha, mouse, anchors. That write taints the frame,

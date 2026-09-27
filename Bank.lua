@@ -1311,8 +1311,33 @@ end
 -- part is refusing; this asks the client directly and prints what it says.
 function BNK:Diagnose(print_)
     print_(("tab bank: %s"):format(tostring(TAB_BANK)))
+    -- The parts that matter on any bank, before the tab-bank questions
+    -- that only one model can answer. A legacy bank used to stop here
+    -- with one line, which is the model the character that hit this is
+    -- on.
+    local bf = rawget(_G, "BankFrame")
+    print_(("BankFrame: %s, hooked by us %s, moved by us %s, shown %s")
+        :format(bf and "exists" or "missing",
+                tostring(bf and bf._wicksHooked or false),
+                tostring(bf and bf._wicksAnchor ~= nil or false),
+                tostring(bf and bf:IsShown() or false)))
+    -- Whether our code is the thing in the way, which is the question
+    -- every previous attempt got wrong.
+    local issecure = rawget(_G, "issecurevariable")
+    if issecure and bf then
+        for _, field in ipairs({ "SetTab", "GetActiveBankType", "selectedTab" }) do
+            local ok, secure, culprit = pcall(issecure, bf, field)
+            if ok then print_(("BankFrame.%s secure: %s%s"):format(field, tostring(secure),
+                culprit and (", tainted by " .. tostring(culprit)) or "")) end
+        end
+    end
+    print_(("grant pending: %s   hideDefaultBank: %s   purchased slots: %s")
+        :format(tostring(WB.Bank.GrantPending and WB.Bank.GrantPending()),
+                tostring(WB.db and WB.db.options and WB.db.options.hideDefaultBank),
+                tostring(GetNumBankSlots and GetNumBankSlots() or "?")))
+
     if not (TAB_BANK and C_Bank) then
-        print_("legacy bank model, nothing more to report.")
+        print_("legacy bank model, so no tab questions to ask.")
         return
     end
     local function ask(fn, ...)
@@ -1335,23 +1360,6 @@ function BNK:Diagnose(print_)
     print_("next tab: " .. ask("FetchNextPurchasableBankTabData", BANK_TYPE_CHAR))
     print_("locked reason: " .. ask("FetchBankLockedReason", BANK_TYPE_CHAR))
 
-    local bf = rawget(_G, "BankFrame")
-    print_(("BankFrame: %s, hooked by us %s, moved by us %s, shown %s")
-        :format(bf and "exists" or "missing",
-                tostring(bf and bf._wicksHooked or false),
-                tostring(bf and bf._wicksAnchor ~= nil or false),
-                tostring(bf and bf:IsShown() or false)))
-    -- Whether our code is the thing in the way, which is the question
-    -- every previous attempt got wrong.
-    local issecure = rawget(_G, "issecurevariable")
-    if issecure and bf then
-        local ok, secure, culprit = pcall(issecure, bf, "SetTab")
-        if ok then print_(("BankFrame.SetTab secure: %s%s"):format(tostring(secure),
-            culprit and (", tainted by " .. tostring(culprit)) or "")) end
-    end
-    print_(("grant pending: %s   hideDefaultBank: %s")
-        :format(tostring(WB.Bank.GrantPending and WB.Bank.GrantPending()),
-                tostring(WB.db and WB.db.options and WB.db.options.hideDefaultBank)))
 end
 
 function BNK:RevealDefault()

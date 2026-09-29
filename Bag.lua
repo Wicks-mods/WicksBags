@@ -1359,9 +1359,9 @@ end
 -- pick one up. State survives refreshes and resets on panel close.
 
 local BULK = {
-    ["Soul Shard"] = { label = "Soul Shards",  accent = { 0.31, 0.78, 0.47, 0.6 } },
-    ["Projectile"] = { label = "Ammunition",   accent = { 0.62, 0.55, 0.36, 0.6 } },
-    ["Reagent"]    = { label = "Reagents",     accent = { 0.45, 0.55, 0.72, 0.6 } },
+    ["Soul Shard"] = { label = "Soul Shards",  short = "SHARDS",   accent = { 0.31, 0.78, 0.47, 0.6 } },
+    ["Projectile"] = { label = "Ammunition",   short = "AMMO",     accent = { 0.62, 0.55, 0.36, 0.6 } },
+    ["Reagent"]    = { label = "Reagents",     short = "REAGENTS", accent = { 0.45, 0.55, 0.72, 0.6 } },
 }
 local expanded = {}   -- category -> true while the player has opened it
 
@@ -1391,6 +1391,11 @@ local function getAggTile(parent, index)
         countTxt:SetTextColor(1, 1, 1, 1)
         b._countTxt = countTxt
 
+        -- Its heading, like a group's, above the tile.
+        local head = UI:NewText(b, 10, UI.C_GREEN)
+        head:SetPoint("BOTTOM", b, "TOP", 0, 2)
+        b._headTxt = head
+
         -- Collapse indicator (tiny "^" top-right)
         local indTxt = b:CreateFontString(nil, "OVERLAY")
         indTxt:SetFont("Fonts\\ARIALN.TTF", 9, "OUTLINE")
@@ -1414,6 +1419,12 @@ local function getAggTile(parent, index)
             for _, t in ipairs({ qTop, qBottom, qLeft, qRight }) do
                 t:SetColorTexture(c[1], c[2], c[3], c[4] or 1)
             end
+        end
+        -- Modern: drawn like the other slots, the accent as a ring.
+        local modernRing = WickCore.Chrome.ModernSlot and WickCore.Chrome:ModernSlot(b, iconTex)
+        if modernRing then
+            for _, t in ipairs({ qTop, qBottom, qLeft, qRight }) do t:Hide() end
+            setQB = modernRing
         end
         setQB({ 0.31, 0.78, 0.47, 0.6 })
         b._setQB = setQB
@@ -1970,8 +1981,11 @@ function BG:Refresh()
 
         -- Collapsed: skip container padding, the tile renders bare.
         if isCollapsed(g.parent) then
-            g.w = slotSize
-            g.h = slotSize
+            -- The tile and its heading above it.
+            local def = BULK[g.parent]
+            local headerW = def and def.short and (measureHeaderWidth(def.short) + 6) or 0
+            g.w = math.max(slotSize, headerW)
+            g.h = GROUP_PAD_TOP + slotSize
         else
             -- Container width: fit BOTH the slot grid AND the centered header
             -- label (e.g. "ENCHANTING" is wider than a single slot, so a
@@ -2127,7 +2141,8 @@ function BG:Refresh()
                 local agg = getAggTile(body, nextAggIdx)
                 agg:SetSize(slotSize, slotSize)
                 agg:ClearAllPoints()
-                agg:SetPoint("TOPLEFT", body, "TOPLEFT", g.x, -g.y)
+                -- Centred under its heading.
+                agg:SetPoint("TOPLEFT", body, "TOPLEFT", g.x + math.floor((g.w - slotSize) / 2), -(g.y + GROUP_PAD_TOP))
                 local icon = blk.items[1] and blk.items[1].icon
                 if not icon and g.parent == "Soul Shard" then
                     local _, _, _, _, _, _, _, _, _, tex = ns.GetItemInfo(6265)
@@ -2139,6 +2154,7 @@ function BG:Refresh()
                 agg._cat, agg._count, agg._slots = g.parent, total, slots
                 local def = BULK[g.parent]
                 if def and agg._setQB then agg._setQB(def.accent) end
+                if agg._headTxt then agg._headTxt:SetText(def and def.short or "") end
             end
         else
             nextGroupIdx = nextGroupIdx + 1

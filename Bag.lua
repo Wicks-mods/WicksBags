@@ -1982,10 +1982,13 @@ function BG:Refresh()
         -- Collapsed: skip container padding, the tile renders bare.
         if isCollapsed(g.parent) then
             -- The tile and its heading above it.
+            -- The same box a one-slot group takes (heading room above,
+            -- padding at the sides and below), so it lines up with the
+            -- groups around it: Free sits beside or above it on the same rows.
             local def = BULK[g.parent]
-            local headerW = def and def.short and (measureHeaderWidth(def.short) + 6) or 0
-            g.w = math.max(slotSize, headerW)
-            g.h = GROUP_PAD_TOP + slotSize
+            local headerW = def and def.short and (measureHeaderWidth(def.short) + 12) or 0
+            g.w = math.max(slotSize + GROUP_PAD_X * 2, headerW)
+            g.h = GROUP_PAD_TOP + slotSize + GROUP_PAD_BOT
         else
             -- Container width: fit BOTH the slot grid AND the centered header
             -- label (e.g. "ENCHANTING" is wider than a single slot, so a

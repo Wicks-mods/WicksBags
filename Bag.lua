@@ -324,6 +324,14 @@ local function buildSlot(parent, index)
         end
     end
     b._setQualityBorder = setQualityBorder
+    -- The modern style draws the slot like an action button: a rounded
+    -- icon, the quality as a ring. The square edges stay, unused.
+    local modernRing = WickCore.Chrome.ModernSlot and WickCore.Chrome:ModernSlot(b, b._iconTex)
+    if modernRing then
+        for _, t in ipairs({ b._qTop, b._qBottom, b._qLeft, b._qRight }) do t:Hide() end
+        b._setQualityBorder = modernRing
+        setQualityBorder = modernRing
+    end
     setQualityBorder({ 0.20, 0.18, 0.34, 1 })   -- default: muted purple
 
     -- Cooldown spiral (e.g. potions on shared CD)
@@ -678,9 +686,17 @@ local function buildPanel()
     header:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -1, -1)
     header:SetHeight(HEADER_H)
     UI:NewTexture(header, "BACKGROUND", UI.C_HEADER_BG):SetAllPoints(header)
-    -- Subtle 1px divider under header
-    local divider = UI:NewTexture(header, "BORDER", UI.C_BORDER)
-    divider:SetPoint("BOTTOMLEFT"); divider:SetPoint("BOTTOMRIGHT"); divider:SetHeight(1)
+    -- Subtle 1px divider under header. The modern style draws it as the
+    -- accent rule the character sheet's stat headings use, inset a little.
+    local modern = WickCore.Chrome.Modern and WickCore.Chrome:Modern()
+    local divider = UI:NewTexture(header, "BORDER", modern and UI.C_GREEN or UI.C_BORDER)
+    if modern then
+        divider:SetPoint("BOTTOMLEFT", 6, 0); divider:SetPoint("BOTTOMRIGHT", -6, 0)
+        divider:SetAlpha(0.5)
+    else
+        divider:SetPoint("BOTTOMLEFT"); divider:SetPoint("BOTTOMRIGHT")
+    end
+    divider:SetHeight(1)
 
     -- Title (left)
     local titleL, titleR = UI:AddTitleText(header, "Bags", "LEFT", 8, 0)

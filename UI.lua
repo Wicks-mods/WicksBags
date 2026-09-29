@@ -47,7 +47,7 @@ end
 function UI:NewText(parent, size, c)
     if c then return Chrome:Text(parent, size or 11, c) end
     local f = parent:CreateFontString(nil, "OVERLAY")
-    f:SetFont(Chrome.FONT, size or 11, "")
+    if Chrome.SetFont then Chrome:SetFont(f, size or 11) else f:SetFont(Chrome.FONT, size or 11, "") end
     return f
 end
 

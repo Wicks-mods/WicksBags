@@ -211,6 +211,14 @@ local function buildSlot(parent, index)
         end
     end
     b._setQualityBorder = setQualityBorder
+    -- The modern style draws the slot like an action button: a rounded
+    -- icon, the quality as a ring. The square edges stay, unused.
+    local modernRing = WickCore.Chrome.ModernSlot and WickCore.Chrome:ModernSlot(b, b._iconTex)
+    if modernRing then
+        for _, t in ipairs({ b._qTop, b._qBottom, b._qLeft, b._qRight }) do t:Hide() end
+        b._setQualityBorder = modernRing
+        setQualityBorder = modernRing
+    end
     setQualityBorder({ 0.20, 0.18, 0.34, 1 })
 
     -- Item-level overlay (top-left)

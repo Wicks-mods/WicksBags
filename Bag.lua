@@ -1394,7 +1394,7 @@ local function getAggTile(parent, index)
         -- Its heading, like a group's, above the tile.
         local head = UI:NewText(b, 10, UI.C_GREEN)
         -- Over the blank sub-heading band, level with the group headings.
-        head:SetPoint("BOTTOM", b, "TOP", 0, CATEGORY_H + 2)
+        head:SetPoint("BOTTOM", b, "TOP", 0, CATEGORY_H)
         b._headTxt = head
 
         -- Collapse indicator (tiny "^" top-right)

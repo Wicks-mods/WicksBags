@@ -566,8 +566,17 @@ local function buildPanel()
     header:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -1, -1)
     header:SetHeight(HEADER_H)
     UI:NewTexture(header, "BACKGROUND", UI.C_HEADER_BG):SetAllPoints(header)
-    local divider = UI:NewTexture(header, "BORDER", UI.C_BORDER)
-    divider:SetPoint("BOTTOMLEFT"); divider:SetPoint("BOTTOMRIGHT"); divider:SetHeight(1)
+    -- The header rule: in the modern style the accent at half strength,
+    -- inset a little, as the bag window draws it.
+    local modern = WickCore.Chrome.Modern and WickCore.Chrome:Modern()
+    local divider = UI:NewTexture(header, "BORDER", modern and UI.C_GREEN or UI.C_BORDER)
+    if modern then
+        divider:SetPoint("BOTTOMLEFT", 6, 0); divider:SetPoint("BOTTOMRIGHT", -6, 0)
+        divider:SetAlpha(0.5)
+    else
+        divider:SetPoint("BOTTOMLEFT"); divider:SetPoint("BOTTOMRIGHT")
+    end
+    divider:SetHeight(1)
 
     -- Title (left)
     local titleL, titleR = UI:AddTitleText(header, "Bank", "LEFT", 8, 0)

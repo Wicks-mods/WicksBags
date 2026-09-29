@@ -1393,7 +1393,8 @@ local function getAggTile(parent, index)
 
         -- Its heading, like a group's, above the tile.
         local head = UI:NewText(b, 10, UI.C_GREEN)
-        head:SetPoint("BOTTOM", b, "TOP", 0, 2)
+        -- Over the blank sub-heading band, level with the group headings.
+        head:SetPoint("BOTTOM", b, "TOP", 0, CATEGORY_H + 2)
         b._headTxt = head
 
         -- Collapse indicator (tiny "^" top-right)
@@ -1915,9 +1916,10 @@ function BG:Refresh()
                 if headerW + 4 > minW then minW = headerW + 4 end
             end
             blk.w = minW
-            -- A single-sub group draws its name on the container, so the
-            -- block keeps no sub-header band of its own.
-            blk.h = (blk.skipHeader and 0 or CATEGORY_H) + blk.rows * SLOT_W - SLOT_GAP
+            -- A single-sub group draws its name on the container; its block
+            -- still keeps the sub-header band, blank, so its items start on
+            -- the same line as the groups that have sub-headings.
+            blk.h = CATEGORY_H + blk.rows * SLOT_W - SLOT_GAP
         end
     end
 
@@ -1988,7 +1990,7 @@ function BG:Refresh()
             local def = BULK[g.parent]
             local headerW = def and def.short and (measureHeaderWidth(def.short) + 12) or 0
             g.w = math.max(slotSize + GROUP_PAD_X * 2, headerW)
-            g.h = GROUP_PAD_TOP + slotSize + GROUP_PAD_BOT
+            g.h = GROUP_PAD_TOP + CATEGORY_H + slotSize + GROUP_PAD_BOT
         else
             -- Container width: fit BOTH the slot grid AND the centered header
             -- label (e.g. "ENCHANTING" is wider than a single slot, so a
@@ -2145,7 +2147,7 @@ function BG:Refresh()
                 agg:SetSize(slotSize, slotSize)
                 agg:ClearAllPoints()
                 -- Centred under its heading.
-                agg:SetPoint("TOPLEFT", body, "TOPLEFT", g.x + math.floor((g.w - slotSize) / 2), -(g.y + GROUP_PAD_TOP))
+                agg:SetPoint("TOPLEFT", body, "TOPLEFT", g.x + math.floor((g.w - slotSize) / 2), -(g.y + GROUP_PAD_TOP + CATEGORY_H))
                 local icon = blk.items[1] and blk.items[1].icon
                 if not icon and g.parent == "Soul Shard" then
                     local _, _, _, _, _, _, _, _, _, tex = ns.GetItemInfo(6265)
@@ -2193,7 +2195,8 @@ function BG:Refresh()
                 end
 
                 -- Soul Shard expanded: normal slot grid so the player can pick one up.
-                local slotsYOffset = blk.skipHeader and 0 or CATEGORY_H
+                -- The band is kept, blank, where there is no sub-heading.
+                local slotsYOffset = CATEGORY_H
                 local slotsXOffset = math.floor((blk.w - blk.slotW) / 2)
                 if slotsXOffset < 0 then slotsXOffset = 0 end
                 for j, it in ipairs(blk.items) do

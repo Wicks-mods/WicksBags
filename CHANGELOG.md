@@ -1,5 +1,23 @@
 # Wick's Bags — Changelog
 
+## 0.9.4 (2026-09-30)
+
+### Changed
+
+- The bags follow the look chosen in WickCore: in Wick Modern the slots
+  are drawn like action buttons, with an accent rule under the header and
+  the look's own font.
+- Bulk tiles (ammo, shards, reagents) have a heading and the same slot
+  look, and line up with the groups beside them.
+- Every group keeps its sub-heading band, blank where it has none, so
+  item rows line up across groups.
+- The bank and alt viewer headers match the bag window's.
+- Accent colours and option headings follow the theme.
+
+### Fixed
+
+- The bank diagnostic can be reached again, and works on a legacy bank.
+
 ## 0.9.0
 
 One version across the suite for the Forever beta. Every addon carried a

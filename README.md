@@ -33,6 +33,7 @@ Part of the **[Wick suite](https://github.com/Wicksmods/WickSuite)**: precision 
 | **Wick's Bags** | [repo](https://github.com/Wicksmods/WicksBags) | [CurseForge](https://www.curseforge.com/wow/addons/wicks-bags) |
 | **Wick's Trade Hall** | [repo](https://github.com/Wicksmods/WicksTradeHall) | [CurseForge](https://www.curseforge.com/wow/addons/trade-hall) |
 | **Wick's Gear** | [repo](https://github.com/Wicksmods/WicksGear) | [CurseForge](https://www.curseforge.com/wow/addons/wicks-gear) |
+| **Wick's UI** | [repo](https://github.com/Wicksmods/WicksUIForever) | [CurseForge](https://www.curseforge.com/wow/addons/wicks-ui) |
 
 **Community:** [Discord](https://discord.gg/GWGTMhYBZY)
 <!-- wick:suite-table:end -->

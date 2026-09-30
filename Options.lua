@@ -12,6 +12,12 @@ WB.Options = {}
 local OP = WB.Options
 
 local PANEL_W, PANEL_H = 520, 436
+
+-- The look's accent as a text colour, read when used.
+local function accent()
+    local Ch = WickCore and WickCore.Chrome
+    return (Ch and Ch.Esc) and Ch:Esc("fel") or "|cff4FC778"
+end
 local ROW_H  = 22
 local COL_GAP = 8
 
@@ -188,7 +194,7 @@ local function makeCycleButton(parent, label, options, getter, setter)
         local v = getter()
         for _, opt in ipairs(options) do
             if opt.value == v then
-                txt:SetText(label .. ": |cff4FC778" .. opt.text .. "|r")
+                txt:SetText(label .. ": " .. accent() .. opt.text .. "|r")
                 return
             end
         end
@@ -215,7 +221,7 @@ local function makeSlider(parent, label, minV, maxV, step, getter, setter)
     row:SetHeight(ROW_H + 8)
     local txt = UI:NewText(row, 11, UI.C_TEXT_NORMAL)
     txt:SetPoint("TOPLEFT", 0, 0)
-    local function fmt(v) return string.format("%s: |cff4FC778%d%%|r", label, math.floor(v * 100 + 0.5)) end
+    local function fmt(v) return string.format("%s: %s%d%%|r", label, accent(), math.floor(v * 100 + 0.5)) end
     txt:SetText(fmt(getter()))
     local trackH = 6
     local track = CreateFrame("Frame", nil, row)
@@ -664,7 +670,7 @@ local function buildRulesTab(body)
                 item  = "|cffaaaaff",
                 class = "|cffffcc44",
                 name  = "|cff88ddaa",
-                cat   = "|cff4FC778",
+                cat   = accent(),
             }
             r._typeLbl:SetText((typeColor[entry.kind] or "") .. entry.kind:upper() .. "|r")
             r._descLbl:SetText(entry.display)
@@ -880,7 +886,7 @@ local function buildRulesTab(body)
     -- Expose for shift-click population from Bag.lua
     body._setItem = function(itemID, name)
         pendingItemID = itemID
-        itemPreview:SetText("|cff4FC778" .. (name or ("item:" .. itemID)) .. "|r")
+        itemPreview:SetText(accent() .. (name or ("item:" .. itemID)) .. "|r")
         ruleTypeIdx = 1   -- switch to "item" mode
         applyRuleType()
     end

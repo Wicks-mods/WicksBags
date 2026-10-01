@@ -1,5 +1,12 @@
 # Wick's Bags — Changelog
 
+## 0.9.4 - 2026-10-01
+
+### Fixed
+
+- Loads on the 2.5.6 client without being marked out of date. The addon
+  now lists interface 20506 alongside 20505.
+
 ## 0.9.3 - 2026-05-14
 
 - Fix tooltip flicker on all bag and bank item slots. The template's internal UpdateTooltip callback was fighting our OnEnter handler every frame. Nooping UpdateTooltip gives us sole ownership of the tooltip.

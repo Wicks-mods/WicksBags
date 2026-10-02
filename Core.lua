@@ -153,6 +153,7 @@ local PROFILE_DEFAULTS = {
     bagPos  = { posPoint = false, posRel = false, posX = 0, posY = 0, panelW = 0 },
     bankPos = { posPoint = false, posRel = false, posX = 0, posY = 0, panelW = 0 },
     avPos   = { posPoint = false, posRel = false, posX = 0, posY = 0, panelW = 0 },
+    gbankPos = { posPoint = false, posRel = false, posX = 0, posY = 0 },
     options = {
         showJunk         = true,
         showHighlights   = true,
@@ -174,6 +175,7 @@ local PROFILE_DEFAULTS = {
         slotScale        = 1.0,
         useItemRack      = true,
         hideDefaultBank  = true,
+        hideDefaultGuildBank = true,
         suppressAutoBags = true,
         autoOpenBags     = true,
         hideKeyring      = false,
@@ -316,6 +318,15 @@ local EVENTS = {
     "PLAYERBANKSLOTS_CHANGED",
     "PLAYERBANKBAGSLOTS_CHANGED",
     "BANK_TABS_CHANGED",          -- Forever: tab purchased or renamed
+    "GUILDBANKFRAME_OPENED",
+    "PLAYER_INTERACTION_MANAGER_FRAME_SHOW",   -- how retail and Forever open the vault
+    "PLAYER_INTERACTION_MANAGER_FRAME_HIDE",
+    "GUILDBANKFRAME_CLOSED",
+    "GUILDBANKBAGSLOTS_CHANGED",
+    "GUILDBANK_ITEM_LOCK_CHANGED",
+    "GUILDBANK_UPDATE_TABS",
+    "GUILDBANK_UPDATE_MONEY",
+    "GUILDBANK_UPDATE_WITHDRAWMONEY",
     "CURRENCY_DISPLAY_UPDATE",    -- Forever: watched currencies changed
     "MERCHANT_SHOW",
     "MERCHANT_CLOSED",
@@ -381,6 +392,39 @@ local function scheduleBankRefresh()
     end)
 end
 
+local guildDirty = false
+local function scheduleGuildRefresh()
+    if guildDirty then return end
+    guildDirty = true
+    C_Timer.After(0.05, function()
+        guildDirty = false
+        WB:Emit("GUILDBANK_DIRTY")
+    end)
+end
+
+-- The vault can announce itself two ways: GUILDBANKFRAME_OPENED, which the
+-- TBC client sends, and the interaction manager's show with the guild
+-- banker type, which is all Blizzard's modern guild bank code listens to.
+-- Either opens ours once; counts are kept for /wbags guildbank.
+local GUILD_BANKER = Enum and Enum.PlayerInteractionType and Enum.PlayerInteractionType.GuildBanker
+local guildOpen = false
+WB.guildEvents = {}
+local function guildBankOpened(how)
+    WB.guildEvents[how] = (WB.guildEvents[how] or 0) + 1
+    if guildOpen then return end
+    guildOpen = true
+    WB:Emit("GUILDBANK_OPENED")
+    suppressBlizzBags()
+    autoOpenBag()
+end
+local function guildBankClosed(how)
+    WB.guildEvents[how] = (WB.guildEvents[how] or 0) + 1
+    if not guildOpen then return end
+    guildOpen = false
+    WB:Emit("GUILDBANK_CLOSED")
+    autoCloseBag()
+end
+
 f:SetScript("OnEvent", function(self, event, ...)
     if event == "BAG_UPDATE" or event == "BAG_UPDATE_DELAYED" or event == "ITEM_LOCK_CHANGED" then
         scheduleRefresh()
@@ -402,6 +446,18 @@ f:SetScript("OnEvent", function(self, event, ...)
     elseif event == "BANKFRAME_CLOSED" then
         WB:Emit("BANK_CLOSED")
         autoCloseBag()
+    elseif event == "GUILDBANKFRAME_OPENED" then
+        guildBankOpened(event)
+    elseif event == "GUILDBANKFRAME_CLOSED" then
+        guildBankClosed(event)
+    elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" then
+        if GUILD_BANKER and ... == GUILD_BANKER then guildBankOpened(event) end
+    elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_HIDE" then
+        if GUILD_BANKER and ... == GUILD_BANKER then guildBankClosed(event) end
+    elseif event == "GUILDBANKBAGSLOTS_CHANGED" or event == "GUILDBANK_ITEM_LOCK_CHANGED"
+        or event == "GUILDBANK_UPDATE_TABS" or event == "GUILDBANK_UPDATE_MONEY"
+        or event == "GUILDBANK_UPDATE_WITHDRAWMONEY" then
+        scheduleGuildRefresh()
     elseif event == "PLAYERBANKSLOTS_CHANGED" or event == "PLAYERBANKBAGSLOTS_CHANGED" or event == "BANK_TABS_CHANGED" then
         scheduleBankRefresh()
         if event == "BANK_TABS_CHANGED" then WB:Emit("BANK_TABS_CHANGED") end
@@ -413,7 +469,7 @@ f:SetScript("OnEvent", function(self, event, ...)
         or event == "AUCTION_HOUSE_CLOSED" or event == "TRADE_SKILL_CLOSE" then
         autoCloseBag()
     elseif event == "PLAYER_LOGOUT" then
-        for _, mod in ipairs({ WB.Bag, WB.Bank, WB.AltViewer }) do
+        for _, mod in ipairs({ WB.Bag, WB.Bank, WB.GuildBank, WB.AltViewer }) do
             if mod and mod.panel and mod.panel._snapPosition then mod.panel._snapPosition() end
         end
     end
@@ -460,6 +516,30 @@ A:RegisterSlash(function(_, input)
             o.hideDefaultBank == false and "left alone (shown)" or "hidden by us"))
         return
     end
+    if input == "guildbank" then
+        local o = WB.db.options
+        local bits = {}
+        for k, v in pairs(WB.guildEvents or {}) do bits[#bits + 1] = k .. "=" .. v end
+        A:Print("vault events seen: " .. (#bits > 0 and table.concat(bits, " ") or "none"))
+        local gb = WB.GuildBank
+        local st = gb and gb.State and gb:State() or {}
+        local bf = rawget(_G, "GuildBankFrame")
+        A:Print(("our panel: %s, shown %s   option hideDefaultGuildBank: %s")
+            :format(gb and gb.panel and "built" or "not built",
+                    tostring(gb and gb.panel and gb.panel:IsShown() or false),
+                    tostring(o.hideDefaultGuildBank)))
+        A:Print(("Blizzard's GuildBankFrame: %s, shown %s, alpha %s   hooked %s, revealed %s")
+            :format(bf and "loaded" or "not loaded", tostring(bf and bf:IsShown() or false),
+                    tostring(bf and bf:GetAlpha()), tostring(st.hooked), tostring(st.revealed)))
+        return
+    end
+    if input == "defaultguildbank" then
+        local o = WB.db.options
+        o.hideDefaultGuildBank = (o.hideDefaultGuildBank == false) and true or false
+        A:Print(("Blizzard's guild bank window is now %s. It applies from the next visit."):format(
+            o.hideDefaultGuildBank == false and "left alone (shown)" or "replaced by ours"))
+        return
+    end
     if input == "clicks" then
         WB.clickDebug = not WB.clickDebug
         A:Print(("click reporting %s. Right-click an item: a line means the click reached the button, silence means something is sitting on top of it."):format(
@@ -479,6 +559,7 @@ A:RegisterSlash(function(_, input)
         print("  /wbags                 toggle the panel")
         print("  /wbags clicks          report whether a click reaches an item button")
         print("  /wbags defaultbank     show or hide Blizzard's own bank window")
+        print("  /wbags defaultguildbank use Blizzard's guild bank window instead of ours")
         print("  /wbags show | hide     show or hide")
         print("  /wbags options         open options")
         print("  /wbags alts            open the alt inventory viewer")

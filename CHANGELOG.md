@@ -1,5 +1,20 @@
 # Wick's Bags — Changelog
 
+## 0.9.5 (unreleased)
+
+### Fixed
+
+- A new character's first bank visit on Forever no longer throws "blocked
+  from an action only available to the Blizzard UI" and leaves them with
+  no bank tab. The game grants the free first tab as its bank window
+  opens, and Wick's Bags had been showing its own panel and asking the
+  bank API in the same frame, ahead of that; the game then refused the
+  grant because the tab cost it read carried the addon's taint. Wick's
+  Bags now waits a frame on every bank open so the game's own work runs
+  first, shows nothing of its own until the character has a tab, and no
+  longer asks for the next tab's cost at all (the price is in the game's
+  bank window, where the purchase is made).
+
 ## 0.9.4 (2026-09-30)
 
 ### Changed

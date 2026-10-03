@@ -81,9 +81,11 @@ WB.Bank.IsTabBank = TAB_BANK
 
 local function nextBankSlotCost()
     if TAB_BANK then
-        if not C_Bank.FetchNextPurchasableBankTabData then return nil end
-        local ok, data = pcall(C_Bank.FetchNextPurchasableBankTabData, BANK_TYPE_CHAR)
-        return ok and data and data.tabCost or nil
+        -- Not asked on the tab bank. The next tab's cost is the value
+        -- Blizzard's own PurchaseFirstSlot reads to grant the free first
+        -- tab, and taint.log 2026-10-03 showed that grant refused because
+        -- the value carried our taint. Blizzard's window shows the price.
+        return nil
     end
     if GetBankSlotCost then return GetBankSlotCost(GetNumBankSlots and GetNumBankSlots() or 0) end
     return nil
@@ -661,13 +663,15 @@ local function buildPanel()
     buyBtn:SetScript("OnEnter", function()
         buyTxt:SetTextColor(UI.C_GREEN[1], UI.C_GREEN[2], UI.C_GREEN[3], 1)
         local cost = nextBankSlotCost()
-        if cost then
+        if cost or TAB_BANK then
             GameTooltip:SetOwner(buyBtn, "ANCHOR_TOP")
             GameTooltip:AddLine(TAB_BANK and "Buy next bank tab" or "Buy next bank bag slot", 1, 1, 1)
-            GameTooltip:AddLine(cost > 0 and ("Cost: " .. UI:FormatMoney(cost)) or "Free",
-                UI.C_TEXT_DIM[1], UI.C_TEXT_DIM[2], UI.C_TEXT_DIM[3])
+            if cost then
+                GameTooltip:AddLine(cost > 0 and ("Cost: " .. UI:FormatMoney(cost)) or "Free",
+                    UI.C_TEXT_DIM[1], UI.C_TEXT_DIM[2], UI.C_TEXT_DIM[3])
+            end
             if TAB_BANK then
-                GameTooltip:AddLine("Opens Blizzard's bank window, which is where the purchase has to be made.",
+                GameTooltip:AddLine("Opens Blizzard's bank window, which is where the purchase has to be made and where the price is shown.",
                     UI.C_TEXT_DIM[1], UI.C_TEXT_DIM[2], UI.C_TEXT_DIM[3], true)
             end
             GameTooltip:Show()
@@ -1374,7 +1378,7 @@ function BNK:Diagnose(print_)
     print_("has max: " .. ask("HasMaxBankTabs", BANK_TYPE_CHAR))
     print_("can purchase: " .. ask("CanPurchaseBankTab", BANK_TYPE_CHAR))
     print_("can use bank: " .. ask("CanUseBank", BANK_TYPE_CHAR))
-    print_("next tab: " .. ask("FetchNextPurchasableBankTabData", BANK_TYPE_CHAR))
+    print_("next tab: not asked. Reading it from an addon taints the free first tab grant (taint.log 2026-10-03).")
     print_("locked reason: " .. ask("FetchBankLockedReason", BANK_TYPE_CHAR))
 
 end
@@ -1428,11 +1432,17 @@ WB:On("LOGIN", function()
     -- call that grants the first character bank tab while it is free. The
     -- hook goes on after the first bank visit instead.
 end)
+-- Nothing of ours runs in the frame the bank opens in. Blizzard's own show
+-- chain (SelectDefaultTab, SetTab, PurchaseFirstSlot) grants the free
+-- first tab, and taint.log 2026-10-03 showed that grant refused because
+-- the tab cost it read carried our taint: our panel had shown and asked
+-- the bank API in the same frame, ahead of their chain. One frame later
+-- their chain is done, whichever of the open events the client sends
+-- first, and a character still without a tab gets nothing of ours at all.
 WB:On("BANK_OPENED", function()
-    BNK:Show()
-    -- One frame later: Blizzard has finished showing and granting, so it
-    -- is safe to take their window out of the way and keep it there.
+    BNK._open = true
     C_Timer.After(0, function()
+        if not BNK._open then return end
         if grantStillPending() then
             -- Say it once per character rather than leaving them to wonder
             -- why the stock window turned up instead of ours.
@@ -1440,7 +1450,6 @@ WB:On("BANK_OPENED", function()
                 BNK._saidGrantPending = true
                 WB.A:Print("your first bank tab is free, but only Blizzard's own window can grant it, so it stays in charge this visit. Ours takes over once you have a tab.")
             end
-            if BNK.panel then BNK.panel:Hide() end
             return
         end
         suppressDefaultBank()
@@ -1448,25 +1457,27 @@ WB:On("BANK_OPENED", function()
            and WB.db.options.hideDefaultBank ~= false then
             hideDefaultNow(BankFrame)
         end
-    end)
-    -- Auto-open the bag panel too so the user can drag items between
-    -- without manually toggling it. Remember whether the bag was already
-    -- open so we can restore state when the bank closes.
-    if WB.Bag and WB.Bag.panel then
-        BNK._bagWasOpen = WB.Bag.panel:IsShown()
-        if not BNK._bagWasOpen and WB.Bag.Show then WB.Bag:Show() end
-    end
-    -- Slot data can lag the OPENED event by a frame or two on this build —
-    -- schedule a couple of follow-up refreshes so items populate even if
-    -- PLAYERBANKSLOTS_CHANGED doesn't fire as expected.
-    C_Timer.After(0.1, function()
-        if BNK.panel and BNK.panel:IsShown() then BNK:Refresh() end
-    end)
-    C_Timer.After(0.5, function()
-        if BNK.panel and BNK.panel:IsShown() then BNK:Refresh() end
+        BNK:Show()
+        -- Auto-open the bag panel too so the user can drag items between
+        -- without manually toggling it. Remember whether the bag was already
+        -- open so we can restore state when the bank closes.
+        if WB.Bag and WB.Bag.panel then
+            BNK._bagWasOpen = WB.Bag.panel:IsShown()
+            if not BNK._bagWasOpen and WB.Bag.Show then WB.Bag:Show() end
+        end
+        -- Slot data can lag the OPENED event by a frame or two on this build:
+        -- a couple of follow-up refreshes so items populate even if
+        -- PLAYERBANKSLOTS_CHANGED doesn't fire as expected.
+        C_Timer.After(0.1, function()
+            if BNK.panel and BNK.panel:IsShown() then BNK:Refresh() end
+        end)
+        C_Timer.After(0.5, function()
+            if BNK.panel and BNK.panel:IsShown() then BNK:Refresh() end
+        end)
     end)
 end)
 WB:On("BANK_CLOSED", function()
+    BNK._open = nil
     BNK:Hide()
     -- Restore the bag panel to its pre-bank state. If the user opened it
     -- manually before visiting the banker, leave it open; if we opened it

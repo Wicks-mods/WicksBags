@@ -15,6 +15,7 @@
 --   WB.Categories:RegisterSource("foo", { GetCategoryFor = ..., ... })
 
 local ADDON, ns = ...
+if not WickCore then return end   -- said once in Core.lua
 local WB = WicksBags
 
 WB.Categories = {}
@@ -28,7 +29,7 @@ CT.sourceOrder = {}   -- registration order, for the options UI dropdown
 
 function CT:RegisterSource(id, source)
     if not source or type(source.GetCategoryFor) ~= "function" then
-        print(("|cff4FC778Wick's Bags|r: bad source registration: %s"):format(tostring(id)))
+        WB.A:Print(("bad source registration: %s"):format(tostring(id)))
         return
     end
     self.sources[id] = source

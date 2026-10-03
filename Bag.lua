@@ -11,6 +11,7 @@
 -- and right-click container actions are deferred to v0.2.
 
 local ADDON, ns = ...
+if not WickCore then return end   -- said once in Core.lua
 local WB = WicksBags
 local UI = WB.UI
 local CT = WB.Categories
@@ -335,13 +336,13 @@ local function buildSlot(parent, index)
     local ilvl = b:CreateFontString(nil, "OVERLAY")
     ilvl:SetFont("Fonts\\ARIALN.TTF", 10, "OUTLINE")
     ilvl:SetPoint("TOPLEFT", 1, -1)
-    ilvl:SetTextColor(UI.C_TEXT_NORMAL[1], UI.C_TEXT_NORMAL[2], UI.C_TEXT_NORMAL[3], 1)
+    UI:Ink(ilvl, UI.C_TEXT_NORMAL)
     ilvl:SetText("")
     b._ilvlText = ilvl
 
     -- New-item highlight (green pulse, hidden until marked new)
     local newGlow = b:CreateTexture(nil, "OVERLAY")
-    newGlow:SetColorTexture(UI.C_GREEN[1], UI.C_GREEN[2], UI.C_GREEN[3], 0.0)
+    UI:Paint(newGlow, UI.C_GREEN, 0.0)
     newGlow:SetPoint("TOPLEFT", -2, 2)
     newGlow:SetPoint("BOTTOMRIGHT", 2, -2)
     newGlow:Hide()
@@ -668,8 +669,8 @@ local function buildPanel()
     x:SetPoint("CENTER")
     x:SetText("\195\151")
     close:SetScript("OnClick", function() WB.Bag:Hide() end)
-    close:SetScript("OnEnter", function() x:SetTextColor(UI.C_GREEN[1], UI.C_GREEN[2], UI.C_GREEN[3], 1) end)
-    close:SetScript("OnLeave", function() x:SetTextColor(UI.C_TEXT_DIM[1], UI.C_TEXT_DIM[2], UI.C_TEXT_DIM[3], 1) end)
+    close:SetScript("OnEnter", function() UI:Ink(x, UI.C_GREEN) end)
+    close:SetScript("OnLeave", function() UI:Ink(x, UI.C_TEXT_DIM) end)
 
     -- Cog (options) — left of close X
     local cog = CreateFrame("Button", nil, header)
@@ -679,10 +680,10 @@ local function buildPanel()
     cogTex:SetTexture("Interface\\Buttons\\UI-OptionsButton")
     cogTex:SetSize(14, 14)
     cogTex:SetPoint("CENTER")
-    cogTex:SetVertexColor(UI.C_TEXT_DIM[1], UI.C_TEXT_DIM[2], UI.C_TEXT_DIM[3], 1)
+    UI:Tint(cogTex, UI.C_TEXT_DIM)
     cog:SetScript("OnClick", function() if WB.Options then WB.Options:Toggle() end end)
-    cog:SetScript("OnEnter", function() cogTex:SetVertexColor(UI.C_GREEN[1], UI.C_GREEN[2], UI.C_GREEN[3], 1) end)
-    cog:SetScript("OnLeave", function() cogTex:SetVertexColor(UI.C_TEXT_DIM[1], UI.C_TEXT_DIM[2], UI.C_TEXT_DIM[3], 1) end)
+    cog:SetScript("OnEnter", function() UI:Tint(cogTex, UI.C_GREEN) end)
+    cog:SetScript("OnLeave", function() UI:Tint(cogTex, UI.C_TEXT_DIM) end)
     panel._cog = cog
 
     -- Title-bar icons. Sort uses a 1-char letter (Q/A/#) since that conveys
@@ -701,9 +702,9 @@ local function buildPanel()
             txt:SetText(getText())
             local on = getActive()
             if on then
-                txt:SetTextColor(UI.C_GREEN[1], UI.C_GREEN[2], UI.C_GREEN[3], 1)
+                UI:Ink(txt, UI.C_GREEN)
             else
-                txt:SetTextColor(UI.C_TEXT_DIM[1], UI.C_TEXT_DIM[2], UI.C_TEXT_DIM[3], 1)
+                UI:Ink(txt, UI.C_TEXT_DIM)
             end
         end
         refresh()
@@ -749,7 +750,7 @@ local function buildPanel()
         b:SetScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_TOP")
             GameTooltip:SetText(tooltip, 1, 1, 1, true); GameTooltip:Show()
-            icon:SetVertexColor(UI.C_GREEN[1], UI.C_GREEN[2], UI.C_GREEN[3], 1)
+            UI:Tint(icon, UI.C_GREEN)
         end)
         b:SetScript("OnLeave", function()
             GameTooltip:Hide()
@@ -849,8 +850,8 @@ local function buildPanel()
     -- ~150px from the right edge — the 110px-wide search box fits centered.
     search:SetPoint("CENTER", header, "CENTER", 0, 0)
     search:SetAutoFocus(false)
-    search:SetFont("Fonts\\FRIZQT__.TTF", 10, "")
-    search:SetTextColor(UI.C_TEXT_NORMAL[1], UI.C_TEXT_NORMAL[2], UI.C_TEXT_NORMAL[3], 1)
+    WickCore.Chrome:SetFont(search, 10, "")
+    UI:Ink(search, UI.C_TEXT_NORMAL)
     search:SetMaxLetters(40)
     search:SetText("")
     UI:AddBorder(search)
@@ -934,14 +935,14 @@ local function buildPanel()
         UI:AddBorder(btn)
         -- Filter highlight overlay (shown when this bag is the active filter)
         local hilite = btn:CreateTexture(nil, "OVERLAY")
-        hilite:SetColorTexture(UI.C_GREEN[1], UI.C_GREEN[2], UI.C_GREEN[3], 0.25)
+        UI:Paint(hilite, UI.C_GREEN, 0.25)
         hilite:SetPoint("TOPLEFT", -1, 1)
         hilite:SetPoint("BOTTOMRIGHT", 1, -1)
         hilite:Hide()
         -- Empty-slot indicator: "+" shown when no bag is equipped here.
         local emptyMark = btn:CreateFontString(nil, "OVERLAY")
-        emptyMark:SetFont("Fonts\\FRIZQT__.TTF", 11, "")
-        emptyMark:SetTextColor(UI.C_TEXT_DIM[1], UI.C_TEXT_DIM[2], UI.C_TEXT_DIM[3], 0.6)
+        WickCore.Chrome:SetFont(emptyMark, 11, "")
+        UI:Ink(emptyMark, UI.C_TEXT_DIM, 0.6)
         emptyMark:SetPoint("CENTER")
         emptyMark:SetText("+")
         emptyMark:Hide()
@@ -1293,7 +1294,7 @@ local function getAggTile(parent, index)
         local indTxt = b:CreateFontString(nil, "OVERLAY")
         indTxt:SetFont("Fonts\\ARIALN.TTF", 9, "OUTLINE")
         indTxt:SetPoint("TOPRIGHT", -1, -1)
-        indTxt:SetTextColor(UI.C_TEXT_DIM[1], UI.C_TEXT_DIM[2], UI.C_TEXT_DIM[3], 0.8)
+        UI:Ink(indTxt, UI.C_TEXT_DIM, 0.8)
         b._indTxt = indTxt
 
         -- Quality border edges
@@ -1398,7 +1399,7 @@ local _measureFS
 local function measureHeaderWidth(text)
     if not _measureFS then
         _measureFS = UIParent:CreateFontString(nil, "OVERLAY")
-        _measureFS:SetFont("Fonts\\FRIZQT__.TTF", 10, "")
+        WickCore.Chrome:SetFont(_measureFS, 10, "")
         _measureFS:Hide()
     end
     _measureFS:SetText(text or "")
@@ -1432,7 +1433,7 @@ local function getGroupContainer(parent, index)
         local accent = { tex = {} }
         local function makeEdge(p1, p2, w, h)
             local t = f:CreateTexture(nil, "OVERLAY")
-            t:SetColorTexture(UI.C_GREEN[1], UI.C_GREEN[2], UI.C_GREEN[3], 0.35)
+            UI:Paint(t, UI.C_GREEN, 0.35)
             t:SetPoint(p1, f, p1, p1:find("LEFT") and -2 or (p1:find("RIGHT") and 2 or 0),
                        p1:find("TOP") and 2 or (p1:find("BOTTOM") and -2 or 0))
             t:SetPoint(p2, f, p2, p2:find("LEFT") and -2 or (p2:find("RIGHT") and 2 or 0),

@@ -7,6 +7,7 @@
 -- on BANKFRAME_CLOSED.
 
 local ADDON, ns = ...
+if not WickCore then return end   -- said once in Core.lua
 local WB = WicksBags
 local UI = WB.UI
 local CT = WB.Categories
@@ -159,7 +160,7 @@ local function buildDisplaySlot(parent)
     host._iconTex = icon
 
     local cnt = host:CreateFontString(nil, "OVERLAY")
-    cnt:SetFont("Fonts\\FRIZQT__.TTF", 9, "OUTLINE")
+    WickCore.Chrome:SetFont(cnt, 9, "OUTLINE")
     cnt:SetPoint("BOTTOMRIGHT", -1, 1)
     cnt:SetJustifyH("RIGHT")
     host._countText = cnt
@@ -256,7 +257,7 @@ local _measureFS
 local function measureHeaderWidth(text)
     if not _measureFS then
         _measureFS = UIParent:CreateFontString(nil, "OVERLAY")
-        _measureFS:SetFont("Fonts\\FRIZQT__.TTF", 10, "")
+        WickCore.Chrome:SetFont(_measureFS, 10, "")
         _measureFS:Hide()
     end
     _measureFS:SetText(text or "")
@@ -580,11 +581,11 @@ local function buildDropdown(panel)
             hl:SetAllPoints(b); hl:Hide()
             b:SetScript("OnEnter", function()
                 hl:Show()
-                txt:SetTextColor(UI.C_GREEN[1], UI.C_GREEN[2], UI.C_GREEN[3], 1)
+                UI:Ink(txt, UI.C_GREEN)
             end)
             b:SetScript("OnLeave", function()
                 hl:Hide()
-                txt:SetTextColor(UI.C_TEXT_NORMAL[1], UI.C_TEXT_NORMAL[2], UI.C_TEXT_NORMAL[3], 1)
+                UI:Ink(txt, UI.C_TEXT_NORMAL)
             end)
             b:SetScript("OnClick", function()
                 onSelect(key); self:Hide()
@@ -683,8 +684,8 @@ local function buildPanel()
     local xTxt = UI:NewText(close, 14, UI.C_TEXT_DIM)
     xTxt:SetPoint("CENTER"); xTxt:SetText("\195\151")
     close:SetScript("OnClick", function() AV:Hide() end)
-    close:SetScript("OnEnter", function() xTxt:SetTextColor(UI.C_GREEN[1], UI.C_GREEN[2], UI.C_GREEN[3], 1) end)
-    close:SetScript("OnLeave", function() xTxt:SetTextColor(UI.C_TEXT_DIM[1], UI.C_TEXT_DIM[2], UI.C_TEXT_DIM[3], 1) end)
+    close:SetScript("OnEnter", function() UI:Ink(xTxt, UI.C_GREEN) end)
+    close:SetScript("OnLeave", function() UI:Ink(xTxt, UI.C_TEXT_DIM) end)
 
     -- Character selector button
     local charBtn = CreateFrame("Button", nil, header)
@@ -699,10 +700,10 @@ local function buildPanel()
     chevron:SetPoint("RIGHT", -5, 0)
     chevron:SetText("v")
     charBtn:SetScript("OnEnter", function()
-        charTxt:SetTextColor(UI.C_GREEN[1], UI.C_GREEN[2], UI.C_GREEN[3], 1)
+        UI:Ink(charTxt, UI.C_GREEN)
     end)
     charBtn:SetScript("OnLeave", function()
-        charTxt:SetTextColor(UI.C_TEXT_NORMAL[1], UI.C_TEXT_NORMAL[2], UI.C_TEXT_NORMAL[3], 1)
+        UI:Ink(charTxt, UI.C_TEXT_NORMAL)
     end)
     panel._charBtn = charBtn
     panel._charTxt = charTxt
@@ -726,8 +727,8 @@ local function buildPanel()
     avSearch:SetPoint("LEFT",  toolbar, "LEFT",  130, 0)
     avSearch:SetPoint("RIGHT", toolbar, "RIGHT", -8,  0)
     avSearch:SetAutoFocus(false)
-    avSearch:SetFont("Fonts\\FRIZQT__.TTF", 10, "")
-    avSearch:SetTextColor(UI.C_TEXT_NORMAL[1], UI.C_TEXT_NORMAL[2], UI.C_TEXT_NORMAL[3], 1)
+    WickCore.Chrome:SetFont(avSearch, 10, "")
+    UI:Ink(avSearch, UI.C_TEXT_NORMAL)
     avSearch:SetMaxLetters(40)
     avSearch:SetText("")
     UI:AddBorder(avSearch)

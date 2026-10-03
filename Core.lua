@@ -1,7 +1,36 @@
 -- Wick's Bags
--- Core.lua: namespace, saved variables, event dispatch, slash command.
+-- Core.lua: WickCore addon object, saved variables, event dispatch, slash command.
 
 local ADDON, ns = ...
+
+local Core = WickCore
+if not Core then
+    -- WickCore is missing or switched off.
+    --
+    -- The TOC asks for it with OptionalDeps rather than Dependencies on
+    -- purpose. A hard dependency makes the client refuse to load this addon
+    -- at all, so nothing of ours runs and the player is told nothing beyond
+    -- a greyed line in the AddOns list. Loading anyway lets us say what is
+    -- wrong and where to get it.
+    --
+    -- One line for the lot of them, not one per addon: with the whole suite
+    -- installed and WickCore switched off, a line each would be a wall.
+    local need = _G.WicksNeedCore
+    if not need then
+        need = {}
+        _G.WicksNeedCore = need
+        local f = CreateFrame("Frame")
+        f:RegisterEvent("PLAYER_LOGIN")
+        f:SetScript("OnEvent", function()
+            table.sort(need)
+            print(("|cff4FC778Wick's Mods|r: %s %s WickCore, which is not installed or not switched on. It is in the same download as the rest of the suite: |cffD4C8A1wicksmods.com|r")
+                :format(table.concat(need, ", "), #need == 1 and "needs" or "need"))
+        end)
+    end
+    need[#need + 1] = "Wick's Bags"
+    return
+end
+local Chrome = Core.Chrome
 
 -- ============================================================
 -- TBC Anniversary 2.5.5 namespaced calls
@@ -132,6 +161,14 @@ WicksBagsCharDB = WicksBagsCharDB or { version = 1 }
 -- ============================================================
 WicksBags = WicksBags or {}
 local WB = WicksBags
+
+-- No saved variable through WickCore: WicksBagsDB, WicksBagsAlts and the
+-- character table stay as they are. The version is the TOC's, read once.
+local A = Core:NewAddon("WicksBags", {
+    title   = "Wick's Bags",
+    version = (C_AddOns and C_AddOns.GetAddOnMetadata or GetAddOnMetadata)(ADDON, "Version"),
+})
+WB.A = A
 ns.WB = WB
 WB.ADDON = ADDON
 -- WB.db / WB.altDB are set by initSavedVars() on ADDON_LOADED, after WoW
@@ -156,7 +193,7 @@ function WB:Emit(event, ...)
     for _, fn in ipairs(list) do
         local ok, err = pcall(fn, ...)
         if not ok then
-            print(("|cff4FC778Wick's Bags|r error in %s: %s"):format(event, tostring(err)))
+            A:Print(("error in %s: %s"):format(event, tostring(err)))
         end
     end
 end
@@ -269,7 +306,7 @@ f:SetScript("OnEvent", function(self, event, ...)
         end
     elseif event == "PLAYER_LOGIN" then
         WB:Emit("LOGIN")
-        print("|cff4FC778Wick's Bags|r loaded. /wbags to toggle.")
+        A:Print("loaded. /wbags to toggle.")
     elseif event == "BAG_UPDATE" or event == "BAG_UPDATE_DELAYED" or event == "ITEM_LOCK_CHANGED" then
         scheduleRefresh()
         -- ITEM_LOCK_CHANGED also fires on bank slots; nudge bank too
@@ -341,7 +378,7 @@ SlashCmdList.WICKSBAGS = function(input)
     if input == "hide" and WB.Bag then WB.Bag:Hide()  return end
     if input == "reset" and WB.Bag then WB.Bag:ResetPosition()  return end
     if input == "help" or input == "?" then
-        print("|cff4FC778Wick's Bags|r")
+        A:Print("commands:")
         print("  /wbags                 toggle the panel")
         print("  /wbags show            show")
         print("  /wbags hide            hide")
@@ -354,18 +391,18 @@ SlashCmdList.WICKSBAGS = function(input)
         local arg = input:match("^autoopen%s+(%S+)")
         if arg == "off" or arg == "false" or arg == "0" then
             WB.db.options.autoOpenBags = false
-            print("|cff4FC778Wick's Bags|r: auto-open disabled.")
+            A:Print("auto-open disabled.")
         elseif arg == "on" or arg == "true" or arg == "1" then
             WB.db.options.autoOpenBags = true
-            print("|cff4FC778Wick's Bags|r: auto-open enabled.")
+            A:Print("auto-open enabled.")
         else
-            print(("|cff4FC778Wick's Bags|r: auto-open is %s. Use /wbags autoopen on|off."):format(
+            A:Print(("auto-open is %s. Use /wbags autoopen on|off."):format(
                 WB.db.options.autoOpenBags == false and "off" or "on"))
         end
         return
     end
     if input == "dump" then
-        print("|cff4FC778Wick's Bags|r DB dump:")
+        A:Print("DB dump:")
         local pos = WB.db.bagPos or {}
         print(("  bagPos.posPoint = %s"):format(tostring(pos.posPoint)))
         print(("  bagPos.posRel   = %s"):format(tostring(pos.posRel)))
@@ -384,7 +421,36 @@ SlashCmdList.WICKSBAGS = function(input)
         end
         return
     end
-    print("|cff4FC778Wick's Bags|r: unknown command. Try /wb help")
+    A:Print("unknown command. Try /wb help")
 end
 
 -- Hide the default bag UI when ours is open? Optional v0.1 polish, deferred.
+
+-- ============================================================
+-- WickCore options page and launcher line
+-- ============================================================
+-- The everyday switches, under Wick's Mods in the game's Options; the
+-- full set (categories, rules, currencies) is in the bags' own window.
+function A:OnEnable()
+    self:RegisterOptions(function(body)
+        local O = Core.Options
+        local y = 0
+        y = O:Note(body, "One categorised panel for everything you carry, with search, a gold line and the bank beside it. It draws in the look and theme chosen above.", y)
+        y = O:Check(body, "Open the bags at a mailbox, a vendor and the bank",
+            function() return WB.db and WB.db.options.autoOpenBags ~= false end,
+            function(v) if WB.db then WB.db.options.autoOpenBags = v and true or false end end, y)
+        y = O:Check(body, "Highlight new items",
+            function() return WB.db and WB.db.options.showHighlights end,
+            function(v) if WB.db then WB.db.options.showHighlights = v and true or false end; if WB.Bag and WB.Bag.Refresh then WB.Bag:Refresh() end end, y)
+        y = O:Button(body, "Open the bags", function() if WB.Bag and WB.Bag.Toggle then WB.Bag:Toggle() end end, y, 160)
+        y = O:Button(body, "Open the bags' settings", function() if WB.Options and WB.Options.Toggle then WB.Options:Toggle() end end, y, 200)
+        y = O:Note(body, "Categories, custom rules, sorting and the currency strip are in the bags' own settings window.", y)
+    end)
+    self:RegisterLauncher({
+        onClick = function() if WB.Bag and WB.Bag.Toggle then WB.Bag:Toggle() end end,
+        tooltip = function(tt)
+            tt:AddLine(Chrome:TitleMarkup("Wick's Bags"))
+            tt:AddLine("Your bags, categorised. Click to open them.", 1, 1, 1)
+        end,
+    })
+end

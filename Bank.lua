@@ -4,6 +4,7 @@
 -- fires. Same brand chrome, same masonry layout, same Categories resolver.
 
 local ADDON, ns = ...
+if not WickCore then return end   -- said once in Core.lua
 local WB = WicksBags
 local UI = WB.UI
 local CT = WB.Categories
@@ -154,7 +155,7 @@ local function buildSlot(parent, index)
     local ilvl = b:CreateFontString(nil, "OVERLAY")
     ilvl:SetFont("Fonts\\ARIALN.TTF", 10, "OUTLINE")
     ilvl:SetPoint("TOPLEFT", 1, -1)
-    ilvl:SetTextColor(UI.C_TEXT_NORMAL[1], UI.C_TEXT_NORMAL[2], UI.C_TEXT_NORMAL[3], 1)
+    UI:Ink(ilvl, UI.C_TEXT_NORMAL)
     ilvl:SetText("")
     b._ilvlText = ilvl
 
@@ -359,7 +360,7 @@ local _measureFS
 local function measureHeaderWidth(text)
     if not _measureFS then
         _measureFS = UIParent:CreateFontString(nil, "OVERLAY")
-        _measureFS:SetFont("Fonts\\FRIZQT__.TTF", 10, "")
+        WickCore.Chrome:SetFont(_measureFS, 10, "")
         _measureFS:Hide()
     end
     _measureFS:SetText(text or "")
@@ -511,16 +512,16 @@ local function buildPanel()
         if CloseBankFrame then CloseBankFrame() end
         WB.Bank:Hide()
     end)
-    close:SetScript("OnEnter", function() x:SetTextColor(UI.C_GREEN[1], UI.C_GREEN[2], UI.C_GREEN[3], 1) end)
-    close:SetScript("OnLeave", function() x:SetTextColor(UI.C_TEXT_DIM[1], UI.C_TEXT_DIM[2], UI.C_TEXT_DIM[3], 1) end)
+    close:SetScript("OnEnter", function() UI:Ink(x, UI.C_GREEN) end)
+    close:SetScript("OnLeave", function() UI:Ink(x, UI.C_TEXT_DIM) end)
 
     -- Search input (center-aligned)
     local search = CreateFrame("EditBox", nil, header)
     search:SetSize(110, 16)
     search:SetPoint("CENTER", header, "CENTER", 0, 0)
     search:SetAutoFocus(false)
-    search:SetFont("Fonts\\FRIZQT__.TTF", 10, "")
-    search:SetTextColor(UI.C_TEXT_NORMAL[1], UI.C_TEXT_NORMAL[2], UI.C_TEXT_NORMAL[3], 1)
+    WickCore.Chrome:SetFont(search, 10, "")
+    UI:Ink(search, UI.C_TEXT_NORMAL)
     search:SetMaxLetters(40)
     search:SetText("")
     UI:AddBorder(search)
@@ -574,7 +575,7 @@ local function buildPanel()
     buyTxt:SetPoint("CENTER")
     buyTxt:SetText("Buy slot")
     buyBtn:SetScript("OnEnter", function()
-        buyTxt:SetTextColor(UI.C_GREEN[1], UI.C_GREEN[2], UI.C_GREEN[3], 1)
+        UI:Ink(buyTxt, UI.C_GREEN)
         local cost = GetBankSlotCost and GetBankSlotCost(GetNumBankSlots and GetNumBankSlots() or 0)
         if cost then
             GameTooltip:SetOwner(buyBtn, "ANCHOR_TOP")
@@ -585,7 +586,7 @@ local function buildPanel()
         end
     end)
     buyBtn:SetScript("OnLeave", function()
-        buyTxt:SetTextColor(UI.C_TEXT_NORMAL[1], UI.C_TEXT_NORMAL[2], UI.C_TEXT_NORMAL[3], 1)
+        UI:Ink(buyTxt, UI.C_TEXT_NORMAL)
         GameTooltip:Hide()
     end)
     buyBtn:SetScript("OnClick", function()
@@ -621,14 +622,14 @@ local function buildPanel()
         UI:AddBorder(btn)
         -- Filter highlight overlay (shown when this bag is the active filter)
         local hilite = btn:CreateTexture(nil, "OVERLAY")
-        hilite:SetColorTexture(UI.C_GREEN[1], UI.C_GREEN[2], UI.C_GREEN[3], 0.25)
+        UI:Paint(hilite, UI.C_GREEN, 0.25)
         hilite:SetPoint("TOPLEFT", -1, 1)
         hilite:SetPoint("BOTTOMRIGHT", 1, -1)
         hilite:Hide()
         -- Empty-slot indicator shown when this slot is purchased but empty.
         local emptyMark = btn:CreateFontString(nil, "OVERLAY")
-        emptyMark:SetFont("Fonts\\FRIZQT__.TTF", 11, "")
-        emptyMark:SetTextColor(UI.C_TEXT_DIM[1], UI.C_TEXT_DIM[2], UI.C_TEXT_DIM[3], 0.6)
+        WickCore.Chrome:SetFont(emptyMark, 11, "")
+        UI:Ink(emptyMark, UI.C_TEXT_DIM, 0.6)
         emptyMark:SetPoint("CENTER")
         emptyMark:SetText("+")
         emptyMark:Hide()
@@ -702,7 +703,7 @@ local function buildPanel()
     mbIcon:SetTexture("Interface\\Icons\\INV_Misc_Bag_07_Black")
     UI:AddBorder(mainBankBtn)
     local mbHilite = mainBankBtn:CreateTexture(nil, "OVERLAY")
-    mbHilite:SetColorTexture(UI.C_GREEN[1], UI.C_GREEN[2], UI.C_GREEN[3], 0.25)
+    UI:Paint(mbHilite, UI.C_GREEN, 0.25)
     mbHilite:SetPoint("TOPLEFT", -1, 1)
     mbHilite:SetPoint("BOTTOMRIGHT", 1, -1)
     mbHilite:Hide()

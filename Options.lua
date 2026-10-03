@@ -4,11 +4,18 @@
 --   Tab 2 — Rules: custom category assignment (by item, class/subclass, name pattern).
 
 local ADDON, ns = ...
+if not WickCore then return end   -- said once in Core.lua
 local WB = WicksBags
 local UI = WB.UI
 
 WB.Options = {}
 local OP = WB.Options
+
+-- The look's accent as a text colour, read when used.
+local function accent()
+    local Ch = WickCore and WickCore.Chrome
+    return (Ch and Ch.Esc) and Ch:Esc("fel") or "|cff4FC778"
+end
 
 local PANEL_W, PANEL_H = 520, 420
 local ROW_H  = 22
@@ -187,7 +194,7 @@ local function makeCycleButton(parent, label, options, getter, setter)
         local v = getter()
         for _, opt in ipairs(options) do
             if opt.value == v then
-                txt:SetText(label .. ": |cff4FC778" .. opt.text .. "|r")
+                txt:SetText(label .. ": " .. accent() .. opt.text .. "|r")
                 return
             end
         end
@@ -214,7 +221,7 @@ local function makeSlider(parent, label, minV, maxV, step, getter, setter)
     row:SetHeight(ROW_H + 8)
     local txt = UI:NewText(row, 11, UI.C_TEXT_NORMAL)
     txt:SetPoint("TOPLEFT", 0, 0)
-    local function fmt(v) return string.format("%s: |cff4FC778%d%%|r", label, math.floor(v * 100 + 0.5)) end
+    local function fmt(v) return string.format("%s: %s%d%%|r", label, accent(), math.floor(v * 100 + 0.5)) end
     txt:SetText(fmt(getter()))
     local trackH = 6
     local track = CreateFrame("Frame", nil, row)
@@ -284,8 +291,8 @@ local function makeButton(parent, label, onClick)
     local txt = UI:NewText(b, 11, UI.C_TEXT_NORMAL)
     txt:SetPoint("CENTER")
     txt:SetText(label)
-    b:SetScript("OnEnter", function() txt:SetTextColor(UI.C_GREEN[1], UI.C_GREEN[2], UI.C_GREEN[3], 1) end)
-    b:SetScript("OnLeave", function() txt:SetTextColor(UI.C_TEXT_NORMAL[1], UI.C_TEXT_NORMAL[2], UI.C_TEXT_NORMAL[3], 1) end)
+    b:SetScript("OnEnter", function() UI:Ink(txt, UI.C_GREEN) end)
+    b:SetScript("OnLeave", function() UI:Ink(txt, UI.C_TEXT_NORMAL) end)
     b:SetScript("OnClick", onClick)
     return b
 end
@@ -385,7 +392,7 @@ local function makeEditBox(parent, w, h, placeholder)
     eb:SetPoint("BOTTOMRIGHT", -4, 3)
     eb:SetAutoFocus(false)
     eb:SetFontObject(GameFontHighlightSmall)
-    eb:SetTextColor(UI.C_TEXT_NORMAL[1], UI.C_TEXT_NORMAL[2], UI.C_TEXT_NORMAL[3], 1)
+    UI:Ink(eb, UI.C_TEXT_NORMAL)
     eb:SetMaxLetters(64)
     eb:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
     eb:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
@@ -414,10 +421,7 @@ local function makeTabs(parent, tabDefs, bodyFrame)
         activeIdx = idx
         for i, t in ipairs(tabs) do
             local isActive = (i == idx)
-            t._lbl:SetTextColor(
-                isActive and UI.C_GREEN[1]    or UI.C_TEXT_DIM[1],
-                isActive and UI.C_GREEN[2]    or UI.C_TEXT_DIM[2],
-                isActive and UI.C_GREEN[3]    or UI.C_TEXT_DIM[3], 1)
+            UI:Ink(t._lbl, isActive and UI.C_GREEN or UI.C_TEXT_DIM)
             UI:NewTexture(t, "BACKGROUND", isActive and { 0.14, 0.11, 0.22, 1 } or { 0, 0, 0, 0.6 })
         end
         for i, b in ipairs(bodies) do
@@ -568,7 +572,7 @@ local function buildRulesTab(body)
             delX:SetPoint("CENTER")
             delX:SetText("\195\151")
             delBtn:SetScript("OnEnter", function() delX:SetTextColor(0.9, 0.2, 0.2, 1) end)
-            delBtn:SetScript("OnLeave", function() delX:SetTextColor(UI.C_TEXT_DIM[1], UI.C_TEXT_DIM[2], UI.C_TEXT_DIM[3], 1) end)
+            delBtn:SetScript("OnLeave", function() UI:Ink(delX, UI.C_TEXT_DIM) end)
             r._delBtn = delBtn
 
             rowPool[idx] = r
@@ -662,7 +666,7 @@ local function buildRulesTab(body)
                 item  = "|cffaaaaff",
                 class = "|cffffcc44",
                 name  = "|cff88ddaa",
-                cat   = "|cff4FC778",
+                cat   = accent(),
             }
             r._typeLbl:SetText((typeColor[entry.kind] or "") .. entry.kind:upper() .. "|r")
             r._descLbl:SetText(entry.display)
@@ -878,7 +882,7 @@ local function buildRulesTab(body)
     -- Expose for shift-click population from Bag.lua
     body._setItem = function(itemID, name)
         pendingItemID = itemID
-        itemPreview:SetText("|cff4FC778" .. (name or ("item:" .. itemID)) .. "|r")
+        itemPreview:SetText(accent() .. (name or ("item:" .. itemID)) .. "|r")
         ruleTypeIdx = 1   -- switch to "item" mode
         applyRuleType()
     end
@@ -1041,8 +1045,8 @@ function OP:Build()
     local cx = UI:NewText(close, 14, UI.C_TEXT_DIM)
     cx:SetPoint("CENTER"); cx:SetText("\195\151")
     close:SetScript("OnClick",  function() panel:Hide() end)
-    close:SetScript("OnEnter",  function() cx:SetTextColor(UI.C_GREEN[1], UI.C_GREEN[2], UI.C_GREEN[3], 1) end)
-    close:SetScript("OnLeave",  function() cx:SetTextColor(UI.C_TEXT_DIM[1], UI.C_TEXT_DIM[2], UI.C_TEXT_DIM[3], 1) end)
+    close:SetScript("OnEnter",  function() UI:Ink(cx, UI.C_GREEN) end)
+    close:SetScript("OnLeave",  function() UI:Ink(cx, UI.C_TEXT_DIM) end)
 
     -- Tab bar sits just below the header
     local TAB_H = 22

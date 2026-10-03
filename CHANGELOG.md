@@ -1,5 +1,23 @@
 # Wick's Bags — Changelog
 
+## Unreleased
+
+### Added
+
+- The bags draw in WickCore's chrome: colours, borders and corner marks come
+  from the look and theme chosen under Wick's Mods in the game's Options,
+  and follow a change at once. The look's font too.
+- A page under Wick's Mods with the everyday switches (auto-open, new-item
+  highlights) and buttons to the bags and their own settings window. The
+  suite's launcher opens the bags.
+- Chat lines carry the theme's accent colour.
+
+### Changed
+
+- Wick's Bags now needs WickCore, which is in the same download as the rest
+  of the suite. Without it the addon says so once at login and does nothing
+  else. Your settings are untouched.
+
 ## 0.9.4 - 2026-10-01
 
 ### Fixed

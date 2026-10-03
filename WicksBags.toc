@@ -5,6 +5,7 @@
 ## Version: 0.9.4
 ## SavedVariables: WicksBagsDB, WicksBagsAlts
 ## SavedVariablesPerCharacter: WicksBagsCharDB
+## OptionalDeps: WickCore
 
 # Core
 Core.lua

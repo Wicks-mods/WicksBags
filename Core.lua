@@ -336,6 +336,7 @@ local EVENTS = {
     "AUCTION_HOUSE_CLOSED",
     "TRADE_SKILL_SHOW",
     "TRADE_SKILL_CLOSE",
+    "PLAYER_REGEN_ENABLED",       -- a held-over return of the game's bags
     "PLAYER_LOGOUT",
 }
 for _, e in ipairs(EVENTS) do
@@ -344,12 +345,88 @@ end
 
 local autoOpenedBag = false
 
-local function suppressBlizzBags()
+-- Blizzard's own bags open themselves at a vendor, the mailbox, the bank
+-- and the like (OpenAllBags, passed the window that opened them). Ours
+-- stand in for them there, so theirs are kept out of sight: each of their
+-- bag windows goes under a hidden frame of ours while they are open, and
+-- back under its own parent once Blizzard has closed them, or as soon as
+-- the player opens them on purpose (Shift+B).
+--
+-- They used to be shut with CloseAllBags. Called from here, that wrote
+-- Blizzard's record of which window opened the bags as Wick's Bags. The
+-- next bank visit read it while opening, chose its tab as Wick's Bags,
+-- and from then on every bag item clicked (a hearthstone) was refused as
+-- a blocked action until a reload (taint.log 2026-10-04). Moving a frame
+-- writes nothing of Blizzard's.
+local parkedBags = {}            -- Blizzard bag frame -> its own parent
+local bagPark = CreateFrame("Frame")
+bagPark:Hide()
+local releasePending = false
+
+local function blizzBagFrames()
+    local out = {}
+    local combined = rawget(_G, "ContainerFrameCombinedBags")
+    if combined then out[#out + 1] = combined end
+    for i = 1, (rawget(_G, "NUM_CONTAINER_FRAMES") or 13) do
+        local fr = rawget(_G, "ContainerFrame" .. i)
+        if fr then out[#out + 1] = fr end
+    end
+    return out
+end
+
+local function parkBlizzBags()
     if WB.db.options and WB.db.options.suppressAutoBags == false then return end
-    C_Timer.After(0.05, function()
-        if CloseAllBags then CloseAllBags() end
+    if InCombatLockdown() then return end
+    for _, fr in ipairs(blizzBagFrames()) do
+        if not parkedBags[fr] then
+            parkedBags[fr] = fr:GetParent() or UIParent
+            fr:SetParent(bagPark)
+        end
+    end
+end
+
+local function releaseBlizzBags()
+    if not next(parkedBags) then return end
+    if InCombatLockdown() then releasePending = true return end
+    releasePending = false
+    for fr, parent in pairs(parkedBags) do
+        fr:SetParent(parent)
+        parkedBags[fr] = nil
+    end
+end
+
+-- Back once Blizzard has shut its bags; at once when the player opens
+-- them. The hooks are post-hooks, which run after Blizzard's own call and
+-- leave it as it was.
+local function anyBlizzBagShown()
+    for _, fr in ipairs(blizzBagFrames()) do
+        if fr:IsShown() then return true end
+    end
+    return false
+end
+local function releaseWhenShut()
+    C_Timer.After(0, function()
+        if not anyBlizzBagShown() then releaseBlizzBags() end
     end)
 end
+if hooksecurefunc then
+    if rawget(_G, "OpenAllBags") then
+        hooksecurefunc("OpenAllBags", function(frame)
+            -- A window opening the bags for itself: keep them out of
+            -- sight. The player's own Open All Bags: show them.
+            if frame then parkBlizzBags() else releaseBlizzBags() end
+        end)
+    end
+    if rawget(_G, "CloseAllBags") then hooksecurefunc("CloseAllBags", releaseWhenShut) end
+    for _, name in ipairs({ "ToggleAllBags", "ToggleBackpack", "ToggleBag" }) do
+        if rawget(_G, name) then hooksecurefunc(name, releaseBlizzBags) end
+    end
+end
+
+local function suppressBlizzBags()
+    parkBlizzBags()
+end
+WB.ParkedBlizzBags = parkedBags
 
 local function autoOpenBag()
     if not WB.db.options or WB.db.options.autoOpenBags == false then return end
@@ -426,6 +503,10 @@ local function guildBankClosed(how)
 end
 
 f:SetScript("OnEvent", function(self, event, ...)
+    if event == "PLAYER_REGEN_ENABLED" then
+        if releasePending then releaseWhenShut() end
+        return
+    end
     if event == "BAG_UPDATE" or event == "BAG_UPDATE_DELAYED" or event == "ITEM_LOCK_CHANGED" then
         scheduleRefresh()
         if event == "ITEM_LOCK_CHANGED" then scheduleBankRefresh() end

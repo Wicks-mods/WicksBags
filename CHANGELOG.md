@@ -4,6 +4,13 @@
 
 ### Fixed
 
+- Using an item from your bags (a hearthstone, a potion) is no longer
+  refused as a blocked action after a bank visit, until a reload. At a
+  vendor, the mailbox or the bank, Wick's Bags shut the game's own bags
+  for it, and that touched the game's record of which window had opened
+  them. The bank then set itself up as Wick's Bags, and the game refused
+  every bag item clicked after that. The game's bags are now kept out of
+  sight instead of shut, and come back as soon as you open them yourself.
 - A new character's first bank visit on Forever no longer throws "blocked
   from an action only available to the Blizzard UI" and leaves them with
   no bank tab. The game grants the free first tab as its bank window

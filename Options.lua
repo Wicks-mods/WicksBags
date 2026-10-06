@@ -160,12 +160,23 @@ local function makeCheckbox(parent, label, getter, setter)
     local row = CreateFrame("Frame", nil, parent)
     row:SetHeight(ROW_H)
     local cb = CreateFrame("Button", nil, row)
-    cb:SetSize(14, 14)
-    cb:SetPoint("LEFT", 0, 0)
-    UI:NewTexture(cb, "BACKGROUND", { 0, 0, 0, 0.6 }):SetAllPoints(cb)
-    UI:AddBorder(cb, UI.C_BORDER)
-    local mark = UI:NewTexture(cb, "OVERLAY", UI.C_GREEN)
-    mark:SetPoint("TOPLEFT", 2, -2); mark:SetPoint("BOTTOMRIGHT", -2, 2)
+    local mark
+    if UI:Game() and WickCore.Chrome.GameCheckArt then
+        -- Classic: the game's check box.
+        cb:SetSize(22, 22)
+        cb:SetPoint("LEFT", -3, 0)
+        local glow
+        mark, glow = WickCore.Chrome:GameCheckArt(cb)
+        cb:SetScript("OnEnter", function() glow:Show() end)
+        cb:SetScript("OnLeave", function() glow:Hide() end)
+    else
+        cb:SetSize(14, 14)
+        cb:SetPoint("LEFT", 0, 0)
+        UI:NewTexture(cb, "BACKGROUND", { 0, 0, 0, 0.6 }):SetAllPoints(cb)
+        UI:AddBorder(cb, UI.C_BORDER)
+        mark = UI:NewTexture(cb, "OVERLAY", UI.C_GREEN)
+        mark:SetPoint("TOPLEFT", 2, -2); mark:SetPoint("BOTTOMRIGHT", -2, 2)
+    end
     cb._mark = mark
     local function refresh() mark:SetShown(getter() and true or false) end
     refresh()
@@ -176,7 +187,7 @@ local function makeCheckbox(parent, label, getter, setter)
         if WB.Bag and WB.Bag.Refresh then WB.Bag:Refresh() end
     end)
     local txt = UI:NewText(row, 11, UI.C_TEXT_NORMAL)
-    txt:SetPoint("LEFT", cb, "RIGHT", 8, 0)
+    txt:SetPoint("LEFT", cb, "RIGHT", UI:Game() and 3 or 8, 0)
     txt:SetText(label)
     row:EnableMouse(true)
     row:SetScript("OnMouseUp", function() cb:Click() end)
@@ -184,12 +195,18 @@ local function makeCheckbox(parent, label, getter, setter)
 end
 
 local function makeCycleButton(parent, label, options, getter, setter)
-    local b = CreateFrame("Button", nil, parent)
-    b:SetSize(220, ROW_H)
-    UI:NewTexture(b, "BACKGROUND", { 0, 0, 0, 0.6 }):SetAllPoints(b)
-    UI:AddBorder(b, UI.C_BORDER)
-    local txt = UI:NewText(b, 11, UI.C_TEXT_NORMAL)
-    txt:SetPoint("LEFT", 6, 0)
+    local game = UI:Game()
+    local b = game and WickCore.Chrome:Button(parent, "", 220, ROW_H + 2) or CreateFrame("Button", nil, parent)
+    local txt
+    if game then
+        txt = b.label
+    else
+        b:SetSize(220, ROW_H)
+        UI:NewTexture(b, "BACKGROUND", { 0, 0, 0, 0.6 }):SetAllPoints(b)
+        UI:AddBorder(b, UI.C_BORDER)
+        txt = UI:NewText(b, 11, UI.C_TEXT_NORMAL)
+        txt:SetPoint("LEFT", 6, 0)
+    end
     local function refresh()
         local v = getter()
         for _, opt in ipairs(options) do
@@ -223,19 +240,32 @@ local function makeSlider(parent, label, minV, maxV, step, getter, setter)
     txt:SetPoint("TOPLEFT", 0, 0)
     local function fmt(v) return string.format("%s: %s%d%%|r", label, accent(), math.floor(v * 100 + 0.5)) end
     txt:SetText(fmt(getter()))
-    local trackH = 6
-    local track = CreateFrame("Frame", nil, row)
+    local game = UI:Game() and WickCore.Chrome.GAME_SLIDER_BACKDROP
+    local trackH = game and 17 or 6
+    local track = CreateFrame("Frame", nil, row, game and "BackdropTemplate" or nil)
     track:SetHeight(trackH)
-    track:SetPoint("BOTTOMLEFT",  row, "BOTTOMLEFT",  0, 4)
-    track:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", 0, 4)
-    UI:NewTexture(track, "BACKGROUND", { 0, 0, 0, 0.55 }):SetAllPoints(track)
-    UI:AddBorder(track, UI.C_BORDER)
-    local fill = UI:NewTexture(track, "ARTWORK", UI.C_GREEN)
+    track:SetPoint("BOTTOMLEFT",  row, "BOTTOMLEFT",  0, game and -2 or 4)
+    track:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", 0, game and -2 or 4)
+    local fill
+    local thumb = CreateFrame("Button", nil, row)
+    if game and track.SetBackdrop then
+        -- Classic: the game's slider, its groove and its knob; no fill.
+        track:SetBackdrop(WickCore.Chrome.GAME_SLIDER_BACKDROP)
+        fill = track:CreateTexture(nil, "ARTWORK")
+        fill:Hide()
+        thumb:SetSize(32, 32)
+        local knob = thumb:CreateTexture(nil, "OVERLAY")
+        knob:SetTexture(WickCore.Chrome.GAME_SLIDER_KNOB)
+        knob:SetAllPoints(thumb)
+    else
+        UI:NewTexture(track, "BACKGROUND", { 0, 0, 0, 0.55 }):SetAllPoints(track)
+        UI:AddBorder(track, UI.C_BORDER)
+        fill = UI:NewTexture(track, "ARTWORK", UI.C_GREEN)
+        thumb:SetSize(8, 14)
+        UI:NewTexture(thumb, "OVERLAY", UI.C_GREEN):SetAllPoints(thumb)
+    end
     fill:SetPoint("TOPLEFT", 1, -1)
     fill:SetPoint("BOTTOMLEFT", 1, 1)
-    local thumb = CreateFrame("Button", nil, row)
-    thumb:SetSize(8, 14)
-    UI:NewTexture(thumb, "OVERLAY", UI.C_GREEN):SetAllPoints(thumb)
     thumb:EnableMouse(true)
     thumb:RegisterForDrag("LeftButton")
     local function place(value)
@@ -284,6 +314,12 @@ local function makeSlider(parent, label, minV, maxV, step, getter, setter)
 end
 
 local function makeButton(parent, label, onClick)
+    if UI:Game() then
+        -- Classic: the game's red button.
+        local gb = WickCore.Chrome:Button(parent, label, 120, ROW_H + 2)
+        gb:SetScript("OnClick", onClick)
+        return gb
+    end
     local b = CreateFrame("Button", nil, parent)
     b:SetSize(120, ROW_H)
     UI:NewTexture(b, "BACKGROUND", { 0, 0, 0, 0.6 }):SetAllPoints(b)
@@ -303,16 +339,29 @@ local function makeDropdown(parent, options, w, h)
     h = h or ROW_H
     local btn = CreateFrame("Button", nil, parent)
     btn:SetSize(w or 160, h)
-    UI:NewTexture(btn, "BACKGROUND", { 0, 0, 0, 0.6 }):SetAllPoints(btn)
-    UI:AddBorder(btn, UI.C_BORDER)
+    local game = UI:Game() and WickCore.Chrome.GameInputArt
+    if game then
+        -- Classic: a field in the input box's art and the game's down arrow.
+        WickCore.Chrome:GameInputArt(btn, 0)
+    else
+        UI:NewTexture(btn, "BACKGROUND", { 0, 0, 0, 0.6 }):SetAllPoints(btn)
+        UI:AddBorder(btn, UI.C_BORDER)
+    end
     local lbl = UI:NewText(btn, 10, UI.C_TEXT_NORMAL)
     lbl:SetPoint("LEFT", 5, 0)
-    lbl:SetPoint("RIGHT", -16, 0)
+    lbl:SetPoint("RIGHT", game and -20 or -16, 0)
     if lbl.SetWordWrap then lbl:SetWordWrap(false) end
     -- Chevron
     local chev = UI:NewText(btn, 10, UI.C_TEXT_DIM)
     chev:SetPoint("RIGHT", -3, 0)
     chev:SetText("v")
+    if game then
+        chev:Hide()
+        local arrow = btn:CreateTexture(nil, "ARTWORK")
+        arrow:SetTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Up")
+        arrow:SetSize(h + 2, h + 2)
+        arrow:SetPoint("RIGHT", 2, 0)
+    end
 
     local selected = options[1] and options[1].id
     local function refreshLabel()
@@ -426,6 +475,9 @@ local function makeTabs(parent, tabDefs, bodyFrame)
                 isActive and UI.C_GREEN[2]    or UI.C_TEXT_DIM[2],
                 isActive and UI.C_GREEN[3]    or UI.C_TEXT_DIM[3], 1)
             UI:NewTexture(t, "BACKGROUND", isActive and { 0.14, 0.11, 0.22, 1 } or { 0, 0, 0, 0.6 })
+            if t.LockHighlight then
+                if isActive then t:LockHighlight() else t:UnlockHighlight() end
+            end
         end
         for i, b in ipairs(bodies) do
             if b then b:SetShown(i == idx) end
@@ -434,15 +486,22 @@ local function makeTabs(parent, tabDefs, bodyFrame)
 
     local tabW = math.floor((PANEL_W - 24) / #tabDefs)
     for i, def in ipairs(tabDefs) do
-        local t = CreateFrame("Button", nil, parent)
+        local game = UI:Game()
+        local t = game and WickCore.Chrome:Button(parent, def.label, tabW, TAB_H) or CreateFrame("Button", nil, parent)
         t:SetHeight(TAB_H)
         t:SetPoint("TOPLEFT", parent, "TOPLEFT", (i - 1) * tabW, 0)
         t:SetWidth(tabW)
-        UI:NewTexture(t, "BACKGROUND", { 0, 0, 0, 0.6 }):SetAllPoints(t)
-        UI:AddBorder(t, UI.C_BORDER)
-        local lbl = UI:NewText(t, 10, UI.C_TEXT_DIM)
-        lbl:SetPoint("CENTER")
-        lbl:SetText(def.label)
+        local lbl
+        if game then
+            -- Classic: the game's buttons, the chosen one held lit.
+            lbl = t.label
+        else
+            UI:NewTexture(t, "BACKGROUND", { 0, 0, 0, 0.6 }):SetAllPoints(t)
+            UI:AddBorder(t, UI.C_BORDER)
+            lbl = UI:NewText(t, 10, UI.C_TEXT_DIM)
+            lbl:SetPoint("CENTER")
+            lbl:SetText(def.label)
+        end
         t._lbl = lbl
         t:SetScript("OnClick", function() switchTo(i) end)
         tabs[i] = t
@@ -1059,6 +1118,7 @@ function OP:Build()
     close:SetScript("OnClick",  function() panel:Hide() end)
     close:SetScript("OnEnter",  function() cx:SetTextColor(UI.C_GREEN[1], UI.C_GREEN[2], UI.C_GREEN[3], 1) end)
     close:SetScript("OnLeave",  function() cx:SetTextColor(UI.C_TEXT_DIM[1], UI.C_TEXT_DIM[2], UI.C_TEXT_DIM[3], 1) end)
+    UI:GameClose(close, panel)
 
     -- Tab bar sits just below the header
     local TAB_H = 22

@@ -696,6 +696,7 @@ local function buildPanel()
     close:SetScript("OnClick", function() AV:Hide() end)
     close:SetScript("OnEnter", function() xTxt:SetTextColor(UI.C_GREEN[1], UI.C_GREEN[2], UI.C_GREEN[3], 1) end)
     close:SetScript("OnLeave", function() xTxt:SetTextColor(UI.C_TEXT_DIM[1], UI.C_TEXT_DIM[2], UI.C_TEXT_DIM[3], 1) end)
+    UI:GameClose(close, panel)
 
     -- Character selector button
     local charBtn = CreateFrame("Button", nil, header)

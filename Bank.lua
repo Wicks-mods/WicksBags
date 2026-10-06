@@ -600,6 +600,7 @@ local function buildPanel()
     end)
     close:SetScript("OnEnter", function() x:SetTextColor(UI.C_GREEN[1], UI.C_GREEN[2], UI.C_GREEN[3], 1) end)
     close:SetScript("OnLeave", function() x:SetTextColor(UI.C_TEXT_DIM[1], UI.C_TEXT_DIM[2], UI.C_TEXT_DIM[3], 1) end)
+    UI:GameClose(close, panel)
 
     -- Search input (center-aligned)
     local search = CreateFrame("EditBox", nil, header)

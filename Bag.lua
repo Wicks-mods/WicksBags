@@ -241,16 +241,20 @@ local function buildSlot(parent, index)
 
     local b = CreateFrame("Button", "WicksBagsSlot" .. index, host,
         "ContainerFrameItemButtonTemplate")
+    -- Classic keeps the template's slot art, scaled from its own size to
+    -- ours (measured before the slot is sized).
+    local game = UI:Game()
+    if game and WickCore.Chrome.FitGameArt then WickCore.Chrome:FitGameArt(b) end
     b:SetAllPoints(host)
     b._host = host
     b:RegisterForDrag("LeftButton")
     b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     -- Hide the template's pushed/normal textures so our quality-border
     -- treatment isn't covered by Blizzard's default frame art.
-    if b.GetPushedTexture and b:GetPushedTexture() then
+    if not game and b.GetPushedTexture and b:GetPushedTexture() then
         b:GetPushedTexture():SetTexture("")
     end
-    if b.GetNormalTexture and b:GetNormalTexture() then
+    if not game and b.GetNormalTexture and b:GetNormalTexture() then
         b:GetNormalTexture():SetTexture("")
     end
     -- Hide Blizzard's IconBorder (the colored ring it draws around the
@@ -323,6 +327,25 @@ local function buildSlot(parent, index)
         end
     end
     b._setQualityBorder = setQualityBorder
+    if game then
+        -- Classic: the game's quality ring, its white icon frame in the
+        -- quality's colour; none for common and poor, as the game shows.
+        for _, t in ipairs({ b._qTop, b._qBottom, b._qLeft, b._qRight }) do t:Hide() end
+        local ring = b:CreateTexture(nil, "OVERLAY")
+        ring:SetTexture("Interface\\Common\\WhiteIconFrame")
+        ring:SetAllPoints(b)
+        ring:Hide()
+        local function gameRing(c)
+            if not c or (c[4] or 1) < 0.6 or (math.abs(c[1] - 0.20) < 0.02 and math.abs(c[3] - 0.34) < 0.02) then
+                ring:Hide()
+                return
+            end
+            ring:SetVertexColor(c[1], c[2], c[3], 1)
+            ring:Show()
+        end
+        b._setQualityBorder = gameRing
+        setQualityBorder = gameRing
+    end
     setQualityBorder({ 0.20, 0.18, 0.34, 1 })   -- default: muted purple
 
     -- Cooldown spiral (e.g. potions on shared CD)
@@ -652,22 +675,40 @@ local function buildPanel()
     local header = CreateFrame("Frame", nil, panel)
     header:SetPoint("TOPLEFT",  panel, "TOPLEFT",  1, -1)
     header:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -1, -1)
-    header:SetHeight(HEADER_H)
-    UI:NewTexture(header, "BACKGROUND", UI.C_HEADER_BG):SetAllPoints(header)
+    -- Classic: the header is the game's title bar, which shows through.
+    local game = UI:Game()
+    header:SetHeight(game and 22 or HEADER_H)
+    local headerBG = UI:NewTexture(header, "BACKGROUND", UI.C_HEADER_BG)
+    headerBG:SetAllPoints(header)
+    if game then headerBG:Hide() end
     -- Subtle 1px divider under header
     local divider = UI:NewTexture(header, "BORDER", UI.C_BORDER)
     divider:SetPoint("BOTTOMLEFT"); divider:SetPoint("BOTTOMRIGHT"); divider:SetHeight(1)
+    if game then divider:Hide() end
 
     -- Title (left)
     local titleL, titleR = UI:AddTitleText(header, "Bags", "LEFT", 8, 0)
 
     -- Close X (rightmost)
-    local close = CreateFrame("Button", nil, header)
-    close:SetSize(20, 20)
-    close:SetPoint("RIGHT", header, "RIGHT", -6, 0)
+    local close
+    if game then
+        -- Classic: the game's close button, where its windows have it.
+        local ok, made = pcall(CreateFrame, "Button", nil, panel, "UIPanelCloseButtonDefaultAnchors")
+        if ok and made then
+            close = made
+            if close:GetNumPoints() == 0 then close:SetPoint("TOPRIGHT", panel, "TOPRIGHT", 4, 4) end
+            close:SetFrameLevel(header:GetFrameLevel() + 2)
+        end
+    end
+    close = close or CreateFrame("Button", nil, header)
+    if not game then
+        close:SetSize(20, 20)
+        close:SetPoint("RIGHT", header, "RIGHT", -6, 0)
+    end
     local x = UI:NewText(close, 14, UI.C_TEXT_DIM)
     x:SetPoint("CENTER")
     x:SetText("\195\151")
+    if game and close:GetNormalTexture() then x:Hide() end
     close:SetScript("OnClick", function() WB.Bag:Hide() end)
     close:SetScript("OnEnter", function() UI:Ink(x, UI.C_GREEN) end)
     close:SetScript("OnLeave", function() UI:Ink(x, UI.C_TEXT_DIM) end)
@@ -843,28 +884,41 @@ local function buildPanel()
     end
 
     -- Search input — immediately right of the addon title.
-    local search = CreateFrame("EditBox", nil, header)
-    search:SetSize(110, 16)
+    local gameSearch
+    if game then
+        local ok, made = pcall(CreateFrame, "EditBox", nil, header, "SearchBoxTemplate")
+        if ok and made then gameSearch = made end
+    end
+    local search = gameSearch or CreateFrame("EditBox", nil, header)
+    search:SetSize(110, gameSearch and 20 or 16)
     -- Center search in the header (between the title cluster on the left and
     -- the icon cluster on the right). Title ends ~98px in, icon cluster
     -- ~150px from the right edge — the 110px-wide search box fits centered.
     search:SetPoint("CENTER", header, "CENTER", 0, 0)
     search:SetAutoFocus(false)
-    WickCore.Chrome:SetFont(search, 10, "")
-    UI:Ink(search, UI.C_TEXT_NORMAL)
+    if not gameSearch then
+        WickCore.Chrome:SetFont(search, 10, "")
+        UI:Ink(search, UI.C_TEXT_NORMAL)
+    end
     search:SetMaxLetters(40)
     search:SetText("")
-    UI:AddBorder(search)
-    UI:NewTexture(search, "BACKGROUND", UI.C_BG):SetAllPoints(search)
-    search:SetTextInsets(4, 4, 0, 0)
+    if not gameSearch then
+        UI:AddBorder(search)
+        UI:NewTexture(search, "BACKGROUND", UI.C_BG):SetAllPoints(search)
+        search:SetTextInsets(4, 4, 0, 0)
+    end
     panel._search = search
     local placeholder = UI:NewText(search, 10, UI.C_TEXT_DIM)
     placeholder:SetPoint("LEFT", 4, 0)
     placeholder:SetText("search")
-    search:SetScript("OnTextChanged", function(self)
-        placeholder:SetShown(self:GetText() == "")
+    -- The game's box writes its own "Search" and clear button; its script
+    -- for that stays, and ours runs after it.
+    if gameSearch then placeholder:Hide() end
+    local function searchChanged(self)
+        if not gameSearch then placeholder:SetShown(self:GetText() == "") end
         if WB.Bag and WB.Bag.Refresh then WB.Bag:Refresh() end
-    end)
+    end
+    if gameSearch then search:HookScript("OnTextChanged", searchChanged) else search:SetScript("OnTextChanged", searchChanged) end
     search:SetScript("OnEscapePressed", function(self) self:ClearFocus() self:SetText("") end)
 
     -- (Gold and currencies live on the bag/bottom bar — see below.)
@@ -890,10 +944,14 @@ local function buildPanel()
     bagBar:SetHeight(BAG_BAR_H - 4)
     bagBar:SetPoint("BOTTOMLEFT",  panel, "BOTTOMLEFT",   PADDING, PADDING)
     bagBar:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -PADDING, PADDING)
-    UI:NewTexture(bagBar, "BACKGROUND", UI.C_HEADER_BG):SetAllPoints(bagBar)
+    local bagBarBG = UI:NewTexture(bagBar, "BACKGROUND", UI.C_HEADER_BG)
+    bagBarBG:SetAllPoints(bagBar)
     local bagBarBorder = UI:NewTexture(bagBar, "BORDER", UI.C_BORDER)
     bagBarBorder:SetPoint("TOPLEFT");    bagBarBorder:SetPoint("TOPRIGHT")
     bagBarBorder:SetHeight(1)
+    -- Classic: on the window's own background, as the game's bags put
+    -- their money.
+    if game then bagBarBG:Hide(); bagBarBorder:Hide() end
     -- Discreet "bags full" warning strip — 2px red line above the bottom
     -- bar that shows only when freeCount == 0. Subtle but visible.
     local fullWarning = bagBar:CreateTexture(nil, "OVERLAY")

@@ -514,6 +514,7 @@ local function buildPanel()
     end)
     close:SetScript("OnEnter", function() UI:Ink(x, UI.C_GREEN) end)
     close:SetScript("OnLeave", function() UI:Ink(x, UI.C_TEXT_DIM) end)
+    UI:GameClose(close, panel)
 
     -- Search input (center-aligned)
     local search = CreateFrame("EditBox", nil, header)

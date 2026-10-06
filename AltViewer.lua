@@ -686,6 +686,7 @@ local function buildPanel()
     close:SetScript("OnClick", function() AV:Hide() end)
     close:SetScript("OnEnter", function() UI:Ink(xTxt, UI.C_GREEN) end)
     close:SetScript("OnLeave", function() UI:Ink(xTxt, UI.C_TEXT_DIM) end)
+    UI:GameClose(close, panel)
 
     -- Character selector button
     local charBtn = CreateFrame("Button", nil, header)

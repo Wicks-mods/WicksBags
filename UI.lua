@@ -62,7 +62,17 @@ function UI:Tint(tex, c, a)
 end
 
 function UI:NewTexture(parent, layer, c)
-    return Chrome:Texture(parent, layer, c)
+    local t = Chrome:Texture(parent, layer, c)
+    -- Classic: a header or footer strip is the game window's own title bar
+    -- or background, which shows through.
+    if c == UI.C_HEADER_BG and UI:Game() then t:SetAlpha(0) end
+    return t
+end
+
+-- Classic: the game's close button over a window's own (WickCore).
+function UI:GameClose(old, window)
+    if not (UI:Game() and Chrome.GameClose) then return old end
+    return Chrome:GameClose(old, window)
 end
 
 -- Font strings default to the widget's own color when none is given; the

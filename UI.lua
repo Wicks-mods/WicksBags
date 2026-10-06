@@ -21,7 +21,15 @@ UI.C_HEADER_BG   = C.shadow
 UI.C_BORDER      = C.border
 UI.C_GREEN       = C.fel
 UI.C_TEXT_NORMAL = C.text
-UI.C_TEXT_DIM    = { 0.42, 0.35, 0.54, 1 }   -- secondary labels, bags only
+-- Secondary labels, bags only: a dim purple, or in Classic the game's grey.
+-- Read as it is used, so the look in force is the one asked.
+local DIM_WICK, DIM_GAME = { 0.42, 0.35, 0.54, 1 }, { 0.62, 0.62, 0.62, 1 }
+UI.C_TEXT_DIM    = setmetatable({}, { __index = function(_, i)
+    return ((Chrome.Game and Chrome:Game()) and DIM_GAME or DIM_WICK)[i]
+end })
+
+-- Classic: the game's own look, where the bag panels use the game's art.
+function UI:Game() return (Chrome.Game and Chrome:Game()) and true or false end
 
 -- Item-quality colors. Common and poor are muted so green/blue/purple/orange
 -- pop. Higher qualities stay at full saturation.
@@ -61,11 +69,13 @@ end
 
 -- Two-tone "Wick's <Title>" header text. "Wick's" off-white, descriptor green.
 function UI:AddTitleText(parent, descriptor, anchor, x, y)
-    local left = Chrome:Text(parent, 13, C.text)
+    -- Classic: one colour, the game's gold, as its window titles are.
+    local game = UI:Game()
+    local left = Chrome:Text(parent, game and 12 or 13, game and C.fel or C.text)
     left:SetPoint(anchor or "LEFT", x or 8, y or 0)
     left:SetText("Wick's")
 
-    local right = Chrome:Text(parent, 13, C.fel)
+    local right = Chrome:Text(parent, game and 12 or 13, C.fel)
     right:SetPoint("LEFT", left, "RIGHT", 4, 0)
     right:SetText(descriptor or "Bags")
 

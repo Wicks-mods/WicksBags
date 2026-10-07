@@ -1,5 +1,14 @@
 # Wick's Bags — Changelog
 
+## Unreleased
+
+### Fixed
+
+- An item's cooldown time fits inside its own slot. The game drew it in
+  the font it uses for action buttons, which is wider than a bag slot,
+  so the time ran into the next slot, and two items on a shared cooldown
+  side by side read "49m49m".
+
 ## 0.9.5 (2026-10-06)
 
 ### Added

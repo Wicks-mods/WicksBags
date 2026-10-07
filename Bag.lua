@@ -521,6 +521,22 @@ local function releaseAll()
     end
 end
 
+-- The game's cooldown numbers are sized for an action button and run wider
+-- than a bag slot: "49m" spills into the next slot, and two items on a shared
+-- cooldown side by side read "49m49m". The countdown draws in a font sized to
+-- the slot instead, one font object per pixel size.
+local countdownFonts = {}
+local function countdownFont(slotPx)
+    local px = math.max(8, math.floor((slotPx or SLOT_SIZE) * 0.38 + 0.5))
+    if countdownFonts[px] then return countdownFonts[px] end
+    if not CreateFont then return nil end
+    local f = CreateFont("WicksBagsCountdown" .. px)
+    f:SetFont("Fonts\\ARIALN.TTF", px, "OUTLINE")
+    f:SetTextColor(1, 1, 1, 1)
+    countdownFonts[px] = f
+    return f
+end
+
 -- Apply current item state to a slot widget.
 local function dressSlot(b, bag, slot, itemID, link, count, quality, icon, locked, isNew)
     b._bag, b._slot = bag, slot
@@ -605,6 +621,15 @@ local function dressSlot(b, bag, slot, itemID, link, count, quality, icon, locke
         local start, dur
         if ns.GetItemCooldown then start, dur = ns.GetItemCooldown(itemID) end
         if start and start > 0 and dur and dur > 1.5 then
+            local w = math.floor(((b._host or b):GetWidth() or 0) + 0.5)
+            if w <= 0 then w = SLOT_SIZE end
+            if b._cdFontPx ~= w and b._cd.SetCountdownFont then
+                local font = countdownFont(w)
+                if font then
+                    b._cd:SetCountdownFont(font:GetName())
+                    b._cdFontPx = w
+                end
+            end
             b._cd:SetCooldown(start, dur)
             b._cd:Show()
         else

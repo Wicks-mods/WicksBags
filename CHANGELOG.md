@@ -1,9 +1,14 @@
 # Wick's Bags — Changelog
 
-## Unreleased
+## 0.9.5 - 2026-10-06
 
 ### Added
 
+- In WickCore's Classic look the bags are drawn as the game draws its
+  own: the game's window frame and title bar, its search box and close
+  button, item slots in its art with its quality ring, and each
+  group of items in one of its inset panels. The bank, options and alt
+  windows follow.
 - The bags draw in WickCore's chrome: colours, borders and corner marks come
   from the look and theme chosen under Wick's Mods in the game's Options,
   and follow a change at once. The look's font too.

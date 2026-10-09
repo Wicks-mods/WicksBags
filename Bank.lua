@@ -1414,7 +1414,8 @@ local function suppressDefaultBank()
         -- Deferred by one frame: Blizzard finishes its own show chain first.
         C_Timer.After(0, function()
             if self:IsShown() and not self._wicksRevealed
-               and WB.db.options.hideDefaultBank ~= false then
+               and WB.db.options.hideDefaultBank ~= false
+               and not (WB.PadActive and WB.PadActive()) then
                 hideDefaultNow(self)
             end
         end)
@@ -1444,6 +1445,9 @@ WB:On("BANK_OPENED", function()
     BNK._open = true
     C_Timer.After(0, function()
         if not BNK._open then return end
+        -- A controller in hand: the game's own bank, made for it, runs
+        -- the visit. Ours keeps to the keyboard.
+        if WB.PadActive and WB.PadActive() then return end
         if grantStillPending() then
             -- Say it once per character rather than leaving them to wonder
             -- why the stock window turned up instead of ours.
@@ -1493,6 +1497,7 @@ end)
 -- reopen the bank.
 WB:On("BANK_TABS_CHANGED", function()
     if grantStillPending() then return end
+    if WB.PadActive and WB.PadActive() then return end
     if not (BankFrame and BankFrame:IsShown()) then return end
     if WB.db.options.hideDefaultBank == false then return end
     C_Timer.After(0, function()

@@ -543,7 +543,9 @@ local function restored(f)
 end
 
 local function hideDefaultWanted()
-    return WB.db.options.hideDefaultGuildBank ~= false
+    -- Never with a controller in hand: the game's own vault window runs
+    -- the visit there.
+    return WB.db.options.hideDefaultGuildBank ~= false and not (WB.PadActive and WB.PadActive())
 end
 
 local function takeOver()

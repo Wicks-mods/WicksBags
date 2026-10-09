@@ -338,6 +338,7 @@ local EVENTS = {
     "TRADE_SKILL_CLOSE",
     "PLAYER_REGEN_ENABLED",       -- a held-over return of the game's bags
     "PLAYER_LOGOUT",
+    "INPUT_DEVICE_INTERFACE_TRANSITION", -- Forever: a controller picked up or put down
 }
 for _, e in ipairs(EVENTS) do
     pcall(f.RegisterEvent, f, e)
@@ -363,6 +364,19 @@ local bagPark = CreateFrame("Frame")
 bagPark:Hide()
 local releasePending = false
 
+-- On Forever's controller interface the game's bags are the ones made for
+-- it: its navigation, its item panel, its radial opens them. Ours keep to
+-- the keyboard. So with a controller in hand the game's bags are left in
+-- their place, and ours are not opened for it at a vendor or the bank.
+local function padActive()
+    local S = rawget(_G, "C_InputInterfaceStyle")
+    local E = rawget(_G, "Enum") and Enum.InputDeviceInterfaceType
+    if not (S and S.GetCurrentStyle and E and E.Gamepad) then return false end
+    local ok, style = pcall(S.GetCurrentStyle)
+    return (ok and style == E.Gamepad) and true or false
+end
+WB.PadActive = padActive
+
 local function blizzBagFrames()
     local out = {}
     local combined = rawget(_G, "ContainerFrameCombinedBags")
@@ -376,6 +390,7 @@ end
 
 local function parkBlizzBags()
     if WB.db.options and WB.db.options.suppressAutoBags == false then return end
+    if padActive() then return end
     if InCombatLockdown() then return end
     for _, fr in ipairs(blizzBagFrames()) do
         if not parkedBags[fr] then
@@ -430,6 +445,7 @@ WB.ParkedBlizzBags = parkedBags
 
 local function autoOpenBag()
     if not WB.db.options or WB.db.options.autoOpenBags == false then return end
+    if padActive() then return end
     if not WB.Bag then return end
     if not WB.db.ui.hidden then return end
     autoOpenedBag = true
@@ -549,6 +565,9 @@ f:SetScript("OnEvent", function(self, event, ...)
     elseif event == "MERCHANT_CLOSED" or event == "MAIL_CLOSED"
         or event == "AUCTION_HOUSE_CLOSED" or event == "TRADE_SKILL_CLOSE" then
         autoCloseBag()
+    elseif event == "INPUT_DEVICE_INTERFACE_TRANSITION" then
+        -- A controller in hand: the game's bags back in their place.
+        if padActive() then releaseBlizzBags() end
     elseif event == "PLAYER_LOGOUT" then
         for _, mod in ipairs({ WB.Bag, WB.Bank, WB.GuildBank, WB.AltViewer }) do
             if mod and mod.panel and mod.panel._snapPosition then mod.panel._snapPosition() end

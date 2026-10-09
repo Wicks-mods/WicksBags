@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Changed
+
+- On Forever's controller interface the game's own bags are left to it:
+  they are the ones made for the controller, with its navigation and
+  its item panel, and its radial opens them. Wick's Bags keeps to the
+  keyboard. With a controller in hand the game's bags are no longer kept
+  out of sight at a vendor or the bank, and Wick's Bags is not opened
+  there for it.
+
 ### Fixed
 
 - An item's cooldown time fits inside its own slot. The game drew it in

@@ -535,8 +535,9 @@ local function dressSlot(b, bag, slot, itemID, link, count, quality, icon, locke
         -- A red tint on an item you cannot use (Options: Red tint on items
         -- you cannot use). The answer is kept per item, so this costs a
         -- table read once the bag has been seen.
-        if WB.db.options.showUnusable ~= false and BG:IsUnusable(bag, slot, itemID) then
-            b._iconTex:SetVertexColor(1, 0.3, 0.3)
+        b._cannotUse = WB.db.options.showUnusable ~= false and BG:IsUnusable(bag, slot, itemID) or false
+        if b._cannotUse then
+            b._iconTex:SetVertexColor(1, 0.12, 0.12)
         else
             b._iconTex:SetVertexColor(1, 1, 1)
         end
@@ -562,6 +563,8 @@ local function dressSlot(b, bag, slot, itemID, link, count, quality, icon, locke
             local bb = math.min(1.0, qc[3] + (1 - qc[3]) * boost)
             b._setQualityBorder({ rr, gg, bb, 1 })
         end
+        -- An item you cannot use: its border red as well, at full strength.
+        if b._cannotUse then b._setQualityBorder({ 1, 0.1, 0.1, 1 }) end
 
         -- Item level overlay — equipment only (Weapon class 2, Armor class 4).
         if WB.db.options.showItemLevel ~= false then

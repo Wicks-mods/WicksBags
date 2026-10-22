@@ -532,6 +532,14 @@ local function dressSlot(b, bag, slot, itemID, link, count, quality, icon, locke
     if itemID and icon then
         b._iconTex:SetTexture(icon)
         b._iconTex:Show()
+        -- A red tint on an item you cannot use (Options: Red tint on items
+        -- you cannot use). The answer is kept per item, so this costs a
+        -- table read once the bag has been seen.
+        if WB.db.options.showUnusable ~= false and BG:IsUnusable(bag, slot, itemID) then
+            b._iconTex:SetVertexColor(1, 0.3, 0.3)
+        else
+            b._iconTex:SetVertexColor(1, 1, 1)
+        end
         if count and count > 1 then
             b._countText:SetText(tostring(count))
             b._countText:Show()
@@ -2315,6 +2323,82 @@ function BG:DestroyCheapestJunk()
     return true
 end
 
+-- ============================================================
+-- Items you cannot use
+-- ============================================================
+-- The game writes an unmet requirement on the item's tooltip in red: a
+-- level, a class, a proficiency, a reputation, a recipe already known.
+-- That is read once per item and kept, since the answer only changes
+-- when you do (a level, a new skill, a recipe, a reputation step), which
+-- is when it is forgotten and read again. Nothing here runs per frame,
+-- and a refresh that finds every answer kept reads no tooltip at all.
+local unusable = {}
+local lastFactionForget = 0
+
+local function isRed(r, g, b)
+    return r ~= nil and r > 0.9 and g < 0.25 and b < 0.25
+end
+
+local scanTip
+local function tooltipSaysUnusable(bag, slot)
+    -- Where the client hands the tooltip over as data, no frame is touched.
+    local TI = rawget(_G, "C_TooltipInfo")
+    if TI and TI.GetBagItem then
+        local data = TI.GetBagItem(bag, slot)
+        if type(data) == "table" and type(data.lines) == "table" then
+            for i = 2, #data.lines do
+                local line = data.lines[i]
+                local c = line.leftColor
+                if c and isRed(c.r, c.g, c.b) then return true end
+                c = line.rightColor
+                if c and isRed(c.r, c.g, c.b) then return true end
+            end
+            return false
+        end
+    end
+    -- Otherwise a tooltip of our own, never shown, reads the slot.
+    if not scanTip then
+        scanTip = CreateFrame("GameTooltip", "WicksBagsScanTip", nil, "GameTooltipTemplate")
+    end
+    scanTip:SetOwner(UIParent, "ANCHOR_NONE")
+    scanTip:ClearLines()
+    scanTip:SetBagItem(bag, slot)
+    local n = scanTip:NumLines() or 0
+    for i = 2, n do
+        local fs = _G["WicksBagsScanTipTextLeft" .. i]
+        if fs and fs:IsShown() and isRed(fs:GetTextColor()) then scanTip:Hide() return true end
+        fs = _G["WicksBagsScanTipTextRight" .. i]
+        if fs and fs:IsShown() and isRed(fs:GetTextColor()) then scanTip:Hide() return true end
+    end
+    scanTip:Hide()
+    return false
+end
+
+-- True when the item in this slot has a requirement you do not meet.
+function BG:IsUnusable(bag, slot, itemID)
+    if not itemID then return false end
+    local known = unusable[itemID]
+    if known ~= nil then return known end
+    local ok, res = pcall(tooltipSaysUnusable, bag, slot)
+    if not ok then return false end
+    unusable[itemID] = res and true or false
+    return unusable[itemID]
+end
+
+-- Forget every answer. A reputation step is the one that can come many
+-- times a minute, so that one is taken at most once a minute. Returns
+-- whether anything was forgotten.
+function BG:ForgetUnusable(fromFaction)
+    if fromFaction then
+        local now = GetTime()
+        if now - lastFactionForget < 60 then return false end
+        lastFactionForget = now
+    end
+    if next(unusable) == nil then return false end
+    for k in pairs(unusable) do unusable[k] = nil end
+    return true
+end
+
 function BG:Toggle()
     if not self.panel then return end
     if self.panel:IsShown() then self:Hide() else self:Show() end
@@ -2337,4 +2421,6 @@ end
 -- Wire to events
 WB:On("LOGIN",        function() BG:Init() end)
 WB:On("BAGS_DIRTY",   function() BG:Refresh() end)
+WB:On("REQUIREMENTS_CHANGED", function() if BG:ForgetUnusable() then BG:Refresh() end end)
+WB:On("FACTION_CHANGED",      function() if BG:ForgetUnusable(true) then BG:Refresh() end end)
 WB:On("COOLDOWN_CHANGED", function() BG:Refresh() end)

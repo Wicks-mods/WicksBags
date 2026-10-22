@@ -1059,6 +1059,9 @@ local function buildGeneralTab(body)
         makeCheckbox(body, "Use ItemRack sets",
             function() return WB.db.options.useItemRack ~= false end,
             function(v) WB.db.options.useItemRack = v end))
+    addRow(makeCheckbox(body, "Red tint on items you cannot use",
+        function() return WB.db.options.showUnusable ~= false end,
+        function(v) WB.db.options.showUnusable = v end))
     addRow(makeCheckbox(body, "Junk button in the title bar",
         function() return WB.db.options.destroyJunkButton ~= false end,
         function(v) WB.db.options.destroyJunkButton = v end))

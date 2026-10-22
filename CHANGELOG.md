@@ -1,5 +1,16 @@
 # Wick's Bags — Changelog
 
+## Unreleased
+
+### Added
+
+- A red tint on any item you cannot use: a level, class, proficiency or
+  reputation you do not have yet, or a recipe you already know. The game
+  writes those on the tooltip in red; Wick's Bags reads that once per
+  item and keeps the answer until you gain a level, a skill, a recipe or
+  a reputation step, so it costs nothing as you play. Red tint on items
+  you cannot use, under Options, switches it off.
+
 ## 0.9.6 (2026-10-22)
 
 ### Added

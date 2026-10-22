@@ -88,6 +88,7 @@ local DB_DEFAULTS = {
     options = {
         showJunk        = true,
         destroyJunkButton = true,
+        showUnusable     = true,
         showHighlights  = true,
         sortMode        = "quality",   -- "quality" | "name" | "quantity"
         qualityMin      = 0,           -- 0=show all, 1=Common+, 2=Uncommon+, 3=Rare+, 4=Epic+
@@ -228,6 +229,10 @@ local EVENTS = {
     "TRADE_SKILL_SHOW",
     "TRADE_SKILL_CLOSE",
     "PLAYER_LOGOUT",
+    "PLAYER_LEVEL_UP",            -- what you can use may have changed...
+    "SKILL_LINES_CHANGED",
+    "NEW_RECIPE_LEARNED",
+    "UPDATE_FACTION",             -- ...and a reputation step, taken once a minute
 }
 
 -- Track whether we auto-opened the bag panel — used to avoid closing
@@ -344,6 +349,10 @@ f:SetScript("OnEvent", function(self, event, ...)
         or event == "AUCTION_HOUSE_CLOSED"
         or event == "TRADE_SKILL_CLOSE" then
         autoCloseBag()
+    elseif event == "PLAYER_LEVEL_UP" or event == "SKILL_LINES_CHANGED" or event == "NEW_RECIPE_LEARNED" then
+        WB:Emit("REQUIREMENTS_CHANGED")
+    elseif event == "UPDATE_FACTION" then
+        WB:Emit("FACTION_CHANGED")
     elseif event == "PLAYER_LOGOUT" then
         -- Snap all panel positions before the game serializes SavedVariables.
         if WB.Bag and WB.Bag.panel and WB.Bag.panel._snapPosition then

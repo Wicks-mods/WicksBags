@@ -784,6 +784,32 @@ local function buildPanel()
         panel._sortBtn = sortBtn
     end
 
+    -- Quick room: one click destroys the cheapest junk item in your bags.
+    -- The tooltip names what would go before you click.
+    do
+        local junkBtn = game and WickCore.Chrome:Button(header, "Junk", 46, 20) or CreateFrame("Button", nil, header)
+        if not game then junkBtn:SetSize(30, 16) end
+        junkBtn:SetPoint("LEFT", panel._sortBtn or titleR, "RIGHT", 6, 0)
+        if not game then UI:AddBorder(junkBtn) end
+        local junkTxt = UI:NewText(junkBtn, 10, UI.C_TEXT_DIM)
+        junkTxt:SetPoint("CENTER")
+        junkTxt:SetText("junk")
+        if game then junkTxt:Hide() end
+        junkBtn:SetScript("OnClick", function() BG:DestroyCheapestJunk() end)
+        junkBtn:SetScript("OnEnter", function(self)
+            junkTxt:SetTextColor(UI.C_GREEN[1], UI.C_GREEN[2], UI.C_GREEN[3], 1)
+            GameTooltip:SetOwner(self, "ANCHOR_TOP")
+            GameTooltip:SetText("Destroy the cheapest junk item", 1, 1, 1)
+            BG:JunkTooltipLines(GameTooltip)
+            GameTooltip:Show()
+        end)
+        junkBtn:SetScript("OnLeave", function()
+            junkTxt:SetTextColor(UI.C_TEXT_DIM[1], UI.C_TEXT_DIM[2], UI.C_TEXT_DIM[3], 1)
+            GameTooltip:Hide()
+        end)
+        panel._junkBtn = junkBtn
+    end
+
     -- Close X (rightmost)
     local close
     if game then
@@ -2341,6 +2367,9 @@ end
 function BG:ApplyOptionsUI()
     local panel = self.panel
     if not panel then return end
+    if panel._junkBtn then
+        panel._junkBtn:SetShown(WB.db.options.destroyJunkButton ~= false)
+    end
     if panel._search then
         panel._search:SetShown(WB.db.options.showSearch and true or false)
     end
@@ -2390,6 +2419,68 @@ function BG:Hide()
     -- Note: we no longer auto-mark items as seen on hide. The "Recent"
     -- container persists across opens until the user explicitly clicks the
     -- mark-seen icon (or the Options "Mark all items seen" button).
+end
+
+-- ============================================================
+-- Quick room: the cheapest junk item, destroyed
+-- ============================================================
+-- Only poor (grey) items are ever considered. The cheapest by what a
+-- vendor would give for the stack, so what goes is what you would miss
+-- least; of two stacks worth the same, the smaller one goes.
+local JUNK_BAGS = { 0, 1, 2, 3, 4 }
+if REAGENT_CONTAINER then JUNK_BAGS[#JUNK_BAGS + 1] = REAGENT_CONTAINER end
+local junkItemInfo = ns.GetItemInfo or GetItemInfo
+
+local function say(msg)
+    if WB.A and WB.A.Print then WB.A:Print(msg) else print("Wick's Bags: " .. msg) end
+end
+
+function BG:FindCheapestJunk()
+    local best
+    for _, bag in ipairs(JUNK_BAGS) do
+        local n = ns.GetContainerNumSlots(bag) or 0
+        for slot = 1, n do
+            local _, count, locked, quality, _, _, link, _, _, itemID = ns.GetContainerItemInfo(bag, slot)
+            if quality == 0 and not locked and itemID then
+                local price = select(11, junkItemInfo(itemID)) or 0
+                count = count or 1
+                local value = price * count
+                if not best or value < best.value or (value == best.value and count < best.count) then
+                    best = { bag = bag, slot = slot, link = link, count = count, value = value, itemID = itemID }
+                end
+            end
+        end
+    end
+    return best
+end
+
+-- What the junk button says it would destroy.
+function BG:JunkTooltipLines(tt)
+    local it = self:FindCheapestJunk()
+    if it then
+        tt:AddLine(("%s%s, worth %s"):format(it.link or "junk", it.count > 1 and (" x" .. it.count) or "", UI:FormatMoney(it.value)), 1, 1, 1)
+        tt:AddLine("Only grey items are ever chosen. This cannot be undone.", UI.C_TEXT_DIM[1], UI.C_TEXT_DIM[2], UI.C_TEXT_DIM[3], true)
+    else
+        tt:AddLine("No junk in your bags.", UI.C_TEXT_DIM[1], UI.C_TEXT_DIM[2], UI.C_TEXT_DIM[3])
+    end
+end
+
+function BG:DestroyCheapestJunk()
+    if InCombatLockdown() then
+        say("junk cannot be destroyed in combat.")
+        return false
+    end
+    local it = self:FindCheapestJunk()
+    if not it then
+        say("no junk in your bags.")
+        return false
+    end
+    if ClearCursor then ClearCursor() end
+    ns.PickupContainerItem(it.bag, it.slot)
+    if not (CursorHasItem and CursorHasItem()) then return false end
+    DeleteCursorItem()
+    say(("destroyed %s%s, worth %s."):format(it.link or "junk", it.count > 1 and (" x" .. it.count) or "", UI:FormatMoney(it.value)))
+    return true
 end
 
 function BG:Toggle()

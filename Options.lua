@@ -1069,6 +1069,9 @@ local function buildGeneralTab(body)
     boxes[#boxes + 1] = makeCheckbox(body, "Alt counts in tooltips",
         function() return WB.db.options.altTooltips ~= false end,
         function(v) WB.db.options.altTooltips = v end)
+    boxes[#boxes + 1] = makeCheckbox(body, "Junk button in the title bar",
+        function() return WB.db.options.destroyJunkButton ~= false end,
+        function(v) WB.db.options.destroyJunkButton = v end)
     for i = 1, #boxes, 2 do addPair(boxes[i], boxes[i + 1]) end
 
     local markBtn = makeButton(body, "Mark all items seen",

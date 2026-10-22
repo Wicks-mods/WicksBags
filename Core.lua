@@ -178,6 +178,7 @@ local PROFILE_DEFAULTS = {
         hideDefaultGuildBank = true,
         suppressAutoBags = true,
         autoOpenBags     = true,
+        destroyJunkButton = true,
         hideKeyring      = false,
         activeSourceId   = "auto",
     },

@@ -1,6 +1,6 @@
 # Wick's Bags — Changelog
 
-## Unreleased
+## 0.9.8 (2026-10-22)
 
 ### Added
 

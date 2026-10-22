@@ -179,6 +179,7 @@ local PROFILE_DEFAULTS = {
         suppressAutoBags = true,
         autoOpenBags     = true,
         destroyJunkButton = true,
+        showUnusable     = true,
         hideKeyring      = false,
         activeSourceId   = "auto",
     },
@@ -339,6 +340,10 @@ local EVENTS = {
     "TRADE_SKILL_CLOSE",
     "PLAYER_REGEN_ENABLED",       -- a held-over return of the game's bags
     "PLAYER_LOGOUT",
+    "PLAYER_LEVEL_UP",            -- what you can use may have changed...
+    "SKILL_LINES_CHANGED",
+    "NEW_RECIPE_LEARNED",
+    "UPDATE_FACTION",             -- ...and a reputation step, taken once a minute
     "INPUT_DEVICE_INTERFACE_TRANSITION", -- Forever: a controller picked up or put down
 }
 for _, e in ipairs(EVENTS) do
@@ -569,6 +574,10 @@ f:SetScript("OnEvent", function(self, event, ...)
     elseif event == "INPUT_DEVICE_INTERFACE_TRANSITION" then
         -- A controller in hand: the game's bags back in their place.
         if padActive() then releaseBlizzBags() end
+    elseif event == "PLAYER_LEVEL_UP" or event == "SKILL_LINES_CHANGED" or event == "NEW_RECIPE_LEARNED" then
+        WB:Emit("REQUIREMENTS_CHANGED")
+    elseif event == "UPDATE_FACTION" then
+        WB:Emit("FACTION_CHANGED")
     elseif event == "PLAYER_LOGOUT" then
         for _, mod in ipairs({ WB.Bag, WB.Bank, WB.GuildBank, WB.AltViewer }) do
             if mod and mod.panel and mod.panel._snapPosition then mod.panel._snapPosition() end

@@ -1,5 +1,16 @@
 # Wick's Bags — Changelog
 
+## Unreleased
+
+### Added
+
+- A destroy-junk button in the bag's title bar, next to Sort: one click
+  destroys the cheapest grey item in your bags, for quick room. Cheapest
+  by what a vendor would give for the stack, so what goes is what you
+  would miss least, and only grey items are ever chosen. The tooltip
+  names the item before you click, and chat says what went. Junk button
+  in the title bar, under Options, hides it.
+
 ## 0.9.5 - 2026-10-06
 
 ### Added

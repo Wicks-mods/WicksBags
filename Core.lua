@@ -87,6 +87,7 @@ local DB_DEFAULTS = {
     avPos   = { posPoint = false, posRel = false, posX = 0, posY = 0, panelW = 0 },
     options = {
         showJunk        = true,
+        destroyJunkButton = true,
         showHighlights  = true,
         sortMode        = "quality",   -- "quality" | "name" | "quantity"
         qualityMin      = 0,           -- 0=show all, 1=Common+, 2=Uncommon+, 3=Rare+, 4=Epic+

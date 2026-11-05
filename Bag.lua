@@ -25,6 +25,23 @@ local HEADER_H      = 28
 local SLOT_SIZE     = 32
 local SLOT_GAP      = 2
 local CATEGORY_H    = 14
+local CATEGORY_H_BASE = CATEGORY_H
+
+-- A look whose text runs larger than the game's (a pixel face) asks for
+-- frames that fit their text (WickCore style field fitText). Elsewhere
+-- every size below is the fixed one.
+local function fitLook()
+    local Ch = WickCore and WickCore.Chrome
+    return Ch and Ch.StyleDef and Ch:StyleDef().fitText or false
+end
+-- A header button as wide and tall as its label needs, never smaller than
+-- its design size and never taller than the header strip allows.
+local function fitButton(btn, fs, minW, minH, maxH)
+    if not fitLook() or not fs then return end
+    local w = math.ceil((fs:GetStringWidth() or 0) + 10)
+    local h = math.ceil((fs:GetStringHeight() or 0) + 4)
+    btn:SetSize(math.max(minW, w), math.min(maxH, math.max(minH, h)))
+end
 local CAT_GAP_X     = 6   -- horizontal gap between top-level group containers
 local CAT_GAP_Y     = 6   -- vertical gap between top-level group containers
 local SUB_GAP_X     = 6   -- horizontal gap between sub-blocks INSIDE a container
@@ -776,7 +793,7 @@ local function buildPanel()
         local sortTxt = UI:NewText(sortBtn, 10, UI.C_TEXT_DIM)
         sortTxt:SetPoint("CENTER")
         sortTxt:SetText("sort")
-        if game then sortTxt:Hide() end
+        if game then sortTxt:Hide() else fitButton(sortBtn, sortTxt, 30, 16, HEADER_H - 4) end
         sortBtn:SetScript("OnClick", function()
             if InCombatLockdown() then return end
             C_Container.SortBags()
@@ -805,7 +822,7 @@ local function buildPanel()
         local junkTxt = UI:NewText(junkBtn, 10, UI.C_TEXT_DIM)
         junkTxt:SetPoint("CENTER")
         junkTxt:SetText("junk")
-        if game then junkTxt:Hide() end
+        if game then junkTxt:Hide() else fitButton(junkBtn, junkTxt, 30, 16, HEADER_H - 4) end
         junkBtn:SetScript("OnClick", function() BG:DestroyCheapestJunk() end)
         junkBtn:SetScript("OnEnter", function(self)
             junkTxt:SetTextColor(UI.C_GREEN[1], UI.C_GREEN[2], UI.C_GREEN[3], 1)
@@ -1628,21 +1645,44 @@ end
 -- Pool of group-container frames (one per parent class with 2+ sub-cats in view).
 local groupContainers = {}
 local GROUP_HEADER_H = 14
+local GROUP_HEADER_BASE = GROUP_HEADER_H
 local GROUP_PAD_X    = 4
 local GROUP_PAD_TOP  = GROUP_HEADER_H + 1
 local GROUP_PAD_BOT  = 4
 
 -- Hidden FontString used to measure header text width so container width
 -- can be sized to fit both the slot grid AND the centered header label.
-local _measureFS
-local function measureHeaderWidth(text)
-    if not _measureFS then
-        _measureFS = UIParent:CreateFontString(nil, "OVERLAY")
-        _measureFS:SetFont("Fonts\\FRIZQT__.TTF", 10, "")
-        _measureFS:Hide()
+-- In a fitText look the measure is the label's own font and size (a
+-- sub-heading is 8, a container heading 10); otherwise the one it always was.
+local _measure = {}
+local function measureFS(size)
+    local key = fitLook() and size or 0
+    local fs = _measure[key]
+    if not fs then
+        fs = UIParent:CreateFontString(nil, "OVERLAY")
+        if key == 0 then fs:SetFont("Fonts\\FRIZQT__.TTF", 10, "")
+        else WickCore.Chrome:SetFont(fs, size, "") end
+        fs:Hide()
+        _measure[key] = fs
     end
-    _measureFS:SetText(text or "")
-    return _measureFS:GetStringWidth() or 0
+    return fs
+end
+local function measureHeaderWidth(text, size)
+    local fs = measureFS(size or 10)
+    fs:SetText(text or "")
+    return fs:GetStringWidth() or 0
+end
+-- The heading bands as tall as their text, in a fitText look.
+local function fitHeaders()
+    if not fitLook() then return end
+    local function tall(size)
+        local fs = measureFS(size)
+        fs:SetText("XQ")
+        return math.ceil(fs:GetStringHeight() or 0)
+    end
+    CATEGORY_H = math.max(CATEGORY_H_BASE, tall(8) + 4)
+    GROUP_HEADER_H = math.max(GROUP_HEADER_BASE, tall(10) + 2)
+    GROUP_PAD_TOP = GROUP_HEADER_H + 1
 end
 
 local function getGroupContainer(parent, index)
@@ -1818,6 +1858,7 @@ end
 function BG:Refresh()
     if not self.panel then return end
     if not self.panel:IsShown() then return end
+    fitHeaders()
     -- Don't re-sort while the cursor is holding an item. Moving a slot fires
     -- BAG_UPDATE which would reshuffle positions before the next click lands.
     if CursorHasItem and CursorHasItem() then return end
@@ -2034,7 +2075,7 @@ function BG:Refresh()
             -- skipHeader case: no sub-header drawn, just slot-grid width.
             local minW = blk.slotW
             if not blk.skipHeader then
-                local headerW = measureHeaderWidth(blk.cat:upper())
+                local headerW = measureHeaderWidth(blk.cat:upper(), 8)
                 if headerW + 4 > minW then minW = headerW + 4 end
             end
             blk.w = minW
@@ -2505,6 +2546,11 @@ end
 -- and a refresh that finds every answer kept reads no tooltip at all.
 local unusable = {}
 local lastFactionForget = 0
+-- Nothing is read or forgotten in combat: the tooltip is not to be trusted
+-- then (the client colours what it withholds), and an answer read in a
+-- fight would be kept long after it. What combat put off happens when it
+-- ends.
+local combatRead, combatForget = false, false
 
 local function isRed(r, g, b)
     return r ~= nil and r > 0.9 and g < 0.25 and b < 0.25
@@ -2550,6 +2596,7 @@ function BG:IsUnusable(bag, slot, itemID)
     if not itemID then return false end
     local known = unusable[itemID]
     if known ~= nil then return known end
+    if InCombatLockdown() then combatRead = true return false end
     local ok, res = pcall(tooltipSaysUnusable, bag, slot)
     if not ok then return false end
     unusable[itemID] = res and true or false
@@ -2566,8 +2613,18 @@ function BG:ForgetUnusable(fromFaction)
         lastFactionForget = now
     end
     if next(unusable) == nil then return false end
+    if InCombatLockdown() then combatForget = true return false end
     for k in pairs(unusable) do unusable[k] = nil end
     return true
+end
+
+-- Combat over: forget what a level or skill in the fight asked to, and
+-- read the slots that went unread.
+function BG:CombatEnded()
+    local read, forget = combatRead, combatForget
+    combatRead, combatForget = false, false
+    if forget then BG:ForgetUnusable() end
+    if (read or forget) and self.panel then BG:Refresh() end
 end
 
 function BG:Toggle()
@@ -2594,4 +2651,5 @@ WB:On("LOGIN",        function() BG:Init() end)
 WB:On("BAGS_DIRTY",   function() BG:Refresh() end)
 WB:On("REQUIREMENTS_CHANGED", function() if BG:ForgetUnusable() then BG:Refresh() end end)
 WB:On("FACTION_CHANGED",      function() if BG:ForgetUnusable(true) then BG:Refresh() end end)
+WB:On("COMBAT_ENDED",         function() BG:CombatEnded() end)
 WB:On("COOLDOWN_CHANGED", function() BG:Refresh() end)

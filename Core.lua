@@ -527,6 +527,7 @@ end
 f:SetScript("OnEvent", function(self, event, ...)
     if event == "PLAYER_REGEN_ENABLED" then
         if releasePending then releaseWhenShut() end
+        WB:Emit("COMBAT_ENDED")
         return
     end
     if event == "BAG_UPDATE" or event == "BAG_UPDATE_DELAYED" or event == "ITEM_LOCK_CHANGED" then

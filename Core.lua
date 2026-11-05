@@ -231,6 +231,7 @@ local EVENTS = {
     "PLAYER_LOGOUT",
     "PLAYER_LEVEL_UP",            -- what you can use may have changed...
     "SKILL_LINES_CHANGED",
+    "PLAYER_REGEN_ENABLED",
     "NEW_RECIPE_LEARNED",
     "UPDATE_FACTION",             -- ...and a reputation step, taken once a minute
 }
@@ -353,6 +354,8 @@ f:SetScript("OnEvent", function(self, event, ...)
         WB:Emit("REQUIREMENTS_CHANGED")
     elseif event == "UPDATE_FACTION" then
         WB:Emit("FACTION_CHANGED")
+    elseif event == "PLAYER_REGEN_ENABLED" then
+        WB:Emit("COMBAT_ENDED")
     elseif event == "PLAYER_LOGOUT" then
         -- Snap all panel positions before the game serializes SavedVariables.
         if WB.Bag and WB.Bag.panel and WB.Bag.panel._snapPosition then

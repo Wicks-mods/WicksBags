@@ -1,5 +1,21 @@
 # Wick's Bags — Changelog
 
+## Unreleased
+
+### Fixed
+
+- An item no longer turns red in a fight and stays red after it. A level
+  or skill gained in combat made the bag read tooltips again while the
+  game was still withholding them, and it kept what it read. Nothing is
+  read or forgotten in combat now; the slots are read once the fight ends.
+
+### Changed
+
+- In WickCore's Cartridge look, section headings are measured in the
+  look's own font and their bands grow to fit it, and the header buttons
+  fit their labels, so nothing spills into the next section. Every other
+  look keeps its sizes.
+
 ## 0.9.7 (2026-10-22)
 
 ### Added

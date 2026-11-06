@@ -690,6 +690,13 @@ local function dressSlot(b, bag, slot, itemID, link, count, quality, icon, locke
     -- Lock state (during a drag or split)
     if b._iconTex then
         b._iconTex:SetDesaturated(locked and true or false)
+        -- A look that draws icons in dots (Cartridge): the slot is the
+        -- game's template, so no hooks; the dots are brought up to date here.
+        local Ch = WickCore and WickCore.Chrome
+        if Ch and Ch.PixelIconSync then
+            Ch:PixelIcon(b._iconTex, true)
+            Ch:PixelIconSync(b._iconTex)
+        end
     end
 end
 

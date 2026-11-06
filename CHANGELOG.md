@@ -1,5 +1,11 @@
 # Wick's Bags — Changelog
 
+## Unreleased
+
+### Changed
+
+- In Cartridge, item icons are drawn in dots, like the rest of the look.
+
 ## 0.9.8 (2026-11-05)
 
 ### Fixed

@@ -1,6 +1,6 @@
 # Wick's Bags — Changelog
 
-## Unreleased
+## 0.9.11 (2026-11-15)
 
 - Small wording fixes in the category window and the options.
 - Shows in the game's addon list with an icon and the two-tone Wick title, under a Wick's Mods heading.

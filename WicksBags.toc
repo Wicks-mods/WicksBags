@@ -1,11 +1,16 @@
 ## Interface: 20505, 20506
-## Title: Wick's Bags
+## Title: |cffD4C8A1Wick's|r |cff4FC778Bags|r
 ## Notes: Categorized bag panel for TBC. Auto-categorize, search, gold display, custom rules, pluggable category sources.
 ## Author: Wick
 ## Version: 0.9.9
+## OptionalDeps: WickCore
 ## SavedVariables: WicksBagsDB, WicksBagsAlts
 ## SavedVariablesPerCharacter: WicksBagsCharDB
-## OptionalDeps: WickCore
+## IconTexture: Interface\Icons\INV_Misc_Bag_07
+## Category: Wick's Mods
+## X-Website: https://wicksmods.com
+## X-License: MIT with trademark carve-out
+## X-Curse-Project-ID: 1537836
 
 # Core
 Core.lua

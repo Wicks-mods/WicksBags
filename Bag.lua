@@ -126,7 +126,7 @@ local function showCatMenu(itemID, itemName)
     -- Header (non-clickable)
     local hdr = UI:NewText(ctxMenu, 9, UI.C_TEXT_DIM)
     hdr:SetPoint("TOPLEFT", ctxMenu, "TOPLEFT", 8, yOff + 2)
-    hdr:SetText((itemName and itemName:upper() or "ITEM") .. " — ASSIGN CATEGORY")
+    hdr:SetText((itemName and itemName:upper() or "ITEM") .. ": ASSIGN CATEGORY")
     yOff = yOff - 16
     ctxMenu._btns[#ctxMenu._btns + 1] = hdr
     addDivider()

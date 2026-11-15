@@ -150,7 +150,7 @@ local ITEM_SUBCLASSES = {
 -- Parent groups for user-defined categories
 local USER_CAT_PARENTS = {
     "Consumable", "Equipment", "Trade Goods", "Misc",
-    "(none — standalone)",
+    "(none, standalone)",
 }
 
 -- ============================================================
@@ -368,7 +368,7 @@ local function makeDropdown(parent, options, w, h)
         for _, o in ipairs(options) do
             if o.id == selected then lbl:SetText(o.name); return end
         end
-        lbl:SetText("—")
+        lbl:SetText("-")
     end
     refreshLabel()
 
@@ -705,7 +705,7 @@ local function buildRulesTab(body)
             local n = name
             entries[#entries + 1] = {
                 kind = "cat", display = name,
-                cat = "parent: " .. (info.parent or "—"),
+                cat = "parent: " .. (info.parent or "-"),
                 del = function()
                     userCats[n] = nil
                     -- Remove any rules that pointed to this cat
@@ -866,7 +866,7 @@ local function buildRulesTab(body)
             local name = newCatEB:GetText():match("^%s*(.-)%s*$")
             if name == "" then return end
             local parent = parentDD:GetSelected()
-            if parent == "(none — standalone)" then parent = nil end
+            if parent == "(none, standalone)" then parent = nil end
             if not WB.db.userCats then WB.db.userCats = {} end
             WB.db.userCats[name] = { parent = parent }
             WB:Emit("BAGS_DIRTY")

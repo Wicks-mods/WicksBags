@@ -1,5 +1,10 @@
 # Wick's Bags — Changelog
 
+## Unreleased
+
+- Small wording fixes in the category window and the options.
+- Shows in the game's addon list with an icon and the two-tone Wick title, under a Wick's Mods heading.
+
 ## 0.9.10 (2026-11-05)
 
 ### Changed
@@ -139,19 +144,19 @@ keeps the module code intact behind its dialect shim.
 - New slash commands: /wbags options, /wbags alts, /wbags sort.
 - Minimap launcher and a page under Options, Wick's Mods.
 
-## 0.9.3 - 2026-05-14
+## 0.9.3 (2026-05-14)
 
 - Fix tooltip flicker on all bag and bank item slots. The template's internal UpdateTooltip callback was fighting our OnEnter handler every frame. Nooping UpdateTooltip gives us sole ownership of the tooltip.
 
-## 0.9.2 - 2026-05-14
+## 0.9.2 (2026-05-14)
 
 - Fix bank item tooltips flickering: showed correct tooltip for half a second then switched to a generic "Vendor / Auction" display. Root cause was HookScript on OnEnter causing a double-draw -- the template fired first (correct), then our hook called SetOwner again and reset the tooltip with stale data. Switched to SetScript to own the tooltip draw exclusively.
 
-## 0.9.1 - 2026-05-12
+## 0.9.1 (2026-05-12)
 
 - Fix keyring key tooltips not appearing on mouseover (SetBagItem doesn't work for bag -2; fall back to SetHyperlink)
 
-## 0.9.0 - 2026-05-12
+## 0.9.0 (2026-05-12)
 
 ### Interactive bag slots
 
@@ -169,13 +174,13 @@ Tooltips updated to reflect the drag behavior: hovering an occupied slot shows "
 
 All equip actions are combat-lockdown safe (disabled in combat). Works for all four carry bag slots and all seven bank bag slots.
 
-## 0.8.1 — 2026-05-10
+## 0.8.1 (2026-05-10)
 
 Alt viewer title + window position polish.
 
 # Changelog
 
-## 0.8.0 - 2026-05-10
+## 0.8.0 (2026-05-10)
 
 Alt inventory viewer + window-position persistence.
 
@@ -183,13 +188,13 @@ Alt inventory viewer + window-position persistence.
 - **Window positions persist across sessions and reloads** for bags, bank, and alt viewer. Previously the panels would reset to default on every `/reload` because of a saved-variable load-timing quirk on TBC Anniversary — saved data loads AFTER the addon's file-scope code runs, so any reference cached at file-scope was stale. Now the addon rebinds those references on ADDON_LOADED, when the saved file content is actually available.
 - **Alt snapshots isolated to their own saved variable** (`WicksBagsAlts`). If anything in the snapshot data ever causes a corrupted file write, positions and options stay intact in `WicksBagsDB`.
 
-## 0.7.2 - 2026-05-09
+## 0.7.2 (2026-05-09)
 
 Bank tooltip fix.
 
 - **Bank items now show their tooltip** when hovered in the main bank window. Bank bag slots already worked; the main bank container needed a different API path in TBC.
 
-## 0.7.1 - 2026-05-09
+## 0.7.1 (2026-05-09)
 
 Bag-fullness warning + keyring count fix.
 
@@ -197,7 +202,7 @@ Bag-fullness warning + keyring count fix.
 - **Red warning strip** above the bottom bar when bags are full — discreet 2px line, only shows at 0 free.
 - **Keyring no longer inflates the FREE count.** Empty keyring slots (up to 32 on a fully upgraded keyring) were being counted as free bag slots, making the FREE tile show 29+ open even when you had nothing draggable left. Keys still show under the **Key** category as before; only the FREE accounting is fixed.
 
-## 0.7.0 - 2026-05-08
+## 0.7.0 (2026-05-08)
 
 First public release. Bank panel, secure click for combat use, ItemRack-as-Equipment subclass, layout polish.
 
@@ -216,7 +221,7 @@ First public release. Bank panel, secure click for combat use, ItemRack-as-Equip
 - Keyring contents (`-2` container) included in the bag scan, so quest keys and dungeon keys show under the **Key** category.
 - **Known limitation**: panel position and size don't currently round-trip across `/reload` on TBC Anniversary 2.5.5. Saved-variable serializer behaves differently than Classic/Retail for new keys; tracking for a future release. Position survives within a session (open/close), just resets on `/reload` or login.
 
-## 0.6.0 - 2026-05-07
+## 0.6.0 (2026-05-07)
 
 Title-bar polish and a bottom bar that owns the gold + PvP currencies.
 
@@ -227,7 +232,7 @@ Title-bar polish and a bottom bar that owns the gold + PvP currencies.
 - **Bag bar now ON by default** since it carries the gold display.
 - Hover any bag icon → tooltip with the bag's contents shown via Blizzard's `SetInventoryItem`. Hover any currency tile → its tooltip.
 
-## 0.5.0 - 2026-05-07
+## 0.5.0 (2026-05-07)
 
 Sorting, filtering, new-items-first, bag bar.
 
@@ -239,7 +244,7 @@ Sorting, filtering, new-items-first, bag bar.
 - Drag-resize feel improved: panel height locks during active drag instead of snapping with every reflow, and gains a 14px breathing buffer below the last row when not dragging.
 - Common (white) and Poor (grey) quality borders dropped to ~50% alpha so Uncommon/Rare/Epic/Legendary borders pop.
 
-## 0.4.0 - 2026-05-07
+## 0.4.0 (2026-05-07)
 
 Resizable window, two-level masonry, parent-class containers, uniform group chrome.
 
@@ -250,7 +255,7 @@ Resizable window, two-level masonry, parent-class containers, uniform group chro
 - **Resizable panel.** Drag the BOTTOMRIGHT L-bracket. Width persists across sessions; height auto-fits to the packed content. Live reflow during drag (throttled to ~20Hz).
 - **Auto-fit width logic removed** in favor of user-controlled width — the panel respects whatever you set it to.
 
-## 0.3.0 - 2026-05-07
+## 0.3.0 (2026-05-07)
 
 Granular auto-categories, custom-rules engine foundation, header polish.
 
@@ -261,7 +266,7 @@ Granular auto-categories, custom-rules engine foundation, header polish.
   - Both are case-insensitive on the name match. UI for managing these arrives in v0.4.
 - **Header reverted to full-size fonts** (title 13pt, gold 11pt, search 110px, close/cog 20px). `MIN_PANEL_W` raised to 400 to fit. With the granular categories there are usually enough blocks to fill the panel anyway.
 
-## 0.2.0 - 2026-05-07
+## 0.2.0 (2026-05-07)
 
 Item interaction, new-item highlights, options panel, masonry layout, visual polish.
 
@@ -273,7 +278,7 @@ Item interaction, new-item highlights, options panel, masonry layout, visual pol
 - **Free slots condensed**: empty bag slots collapse into a single "Free" tile at the end of the layout with a count overlay (e.g. `47` if you have 47 empty slots), so you see free space at a glance without 47 visually-noisy empty squares.
 - **Visual fixes**: removed a stray full-cover overlay that was dimming every item icon. Close-X glyph now renders correctly (Lua 5.1 escape syntax). Section dividers removed and inter-category spacing tightened.
 
-## 0.1.0 - 2026-05-07
+## 0.1.0 (2026-05-07)
 
 Initial scaffold. MVP feature set.
 

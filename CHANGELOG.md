@@ -1,5 +1,15 @@
 # Wick's Bags — Changelog
 
+## Unreleased
+
+### Added
+
+- A mark on items that are still needed, and a line in the tooltip
+  saying by what: a quest in your log that counts the item, or a recipe
+  one of your characters knows. Recipes are read when you open a
+  profession window, once per character. It can be switched off in the
+  options.
+
 ## 0.9.10 (2026-11-15)
 
 - Small wording fixes in the category window and the options.

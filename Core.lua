@@ -89,6 +89,7 @@ local DB_DEFAULTS = {
         showJunk        = true,
         destroyJunkButton = true,
         showUnusable     = true,
+        showNeeded       = true,
         showHighlights  = true,
         sortMode        = "quality",   -- "quality" | "name" | "quantity"
         qualityMin      = 0,           -- 0=show all, 1=Common+, 2=Uncommon+, 3=Rare+, 4=Epic+

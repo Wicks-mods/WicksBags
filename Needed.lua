@@ -64,10 +64,13 @@ local function readQuests()
         if not isHeader and questID and CQ and CQ.GetQuestObjectives then
             local objectives = CQ.GetQuestObjectives(questID)
             for _, o in ipairs(type(objectives) == "table" and objectives or {}) do
-                if o.type == "item" and not o.finished then
+                -- A finished count still wants the items: they are held
+                -- until the quest is handed in.
+                if o.type == "item" then
                     local name = objectiveName(plain(o.text))
                     if name then
-                        out[name] = { title = title or "a quest", have = o.numFulfilled, need = o.numRequired }
+                        out[name] = { title = title or "a quest", have = o.numFulfilled, need = o.numRequired,
+                                      done = o.finished and true or false }
                         sig[#sig + 1] = name .. (o.numFulfilled or 0)
                     end
                 end
@@ -193,7 +196,9 @@ function N:Reasons(itemID)
     local name = itemName(itemID)
     local q = name and quests[name]
     if q then
-        if q.have and q.need then
+        if q.done then
+            out[#out + 1] = ("Quest: %s (ready to hand in)"):format(q.title)
+        elseif q.have and q.need then
             out[#out + 1] = ("Quest: %s (%d/%d)"):format(q.title, q.have, q.need)
         else
             out[#out + 1] = ("Quest: %s"):format(q.title)

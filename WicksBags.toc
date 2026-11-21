@@ -21,6 +21,7 @@ Bag.lua
 Bank.lua
 GuildBank.lua
 AltViewer.lua
+Needed.lua
 
 # Bindings.xml is auto-loaded by WoW from the addon root because of its
 # special filename. Listing it here would load it twice.

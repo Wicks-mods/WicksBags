@@ -1072,6 +1072,9 @@ local function buildGeneralTab(body)
     boxes[#boxes + 1] = makeCheckbox(body, "Red tint on items you cannot use",
         function() return WB.db.options.showUnusable ~= false end,
         function(v) WB.db.options.showUnusable = v end)
+    boxes[#boxes + 1] = makeCheckbox(body, "Mark items a quest or a recipe still needs",
+        function() return WB.db.options.showNeeded ~= false end,
+        function(v) WB.db.options.showNeeded = v end)
     boxes[#boxes + 1] = makeCheckbox(body, "Junk button in the title bar",
         function() return WB.db.options.destroyJunkButton ~= false end,
         function(v) WB.db.options.destroyJunkButton = v end)

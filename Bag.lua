@@ -687,6 +687,9 @@ local function dressSlot(b, bag, slot, itemID, link, count, quality, icon, locke
         end
     end
 
+    -- A mark on what a quest or a recipe still needs (Needed.lua).
+    if WB.Needed then WB.Needed:Mark(b, (itemID and icon) and itemID or nil) end
+
     -- Lock state (during a drag or split)
     if b._iconTex then
         b._iconTex:SetDesaturated(locked and true or false)

@@ -180,6 +180,7 @@ local PROFILE_DEFAULTS = {
         autoOpenBags     = true,
         destroyJunkButton = true,
         showUnusable     = true,
+        showNeeded       = true,
         hideKeyring      = false,
         activeSourceId   = "auto",
     },

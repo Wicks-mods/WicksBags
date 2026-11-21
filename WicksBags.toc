@@ -2,7 +2,7 @@
 ## Title: |cffD4C8A1Wick's|r |cff4FC778Bags|r
 ## Notes: Categorized bag panel for TBC. Auto-categorize, search, gold display, custom rules, pluggable category sources.
 ## Author: Wick
-## Version: 0.9.10
+## Version: 0.10.0
 ## OptionalDeps: WickCore
 ## SavedVariables: WicksBagsDB, WicksBagsAlts
 ## SavedVariablesPerCharacter: WicksBagsCharDB

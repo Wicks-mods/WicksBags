@@ -23,7 +23,7 @@ if not Core then
         f:RegisterEvent("PLAYER_LOGIN")
         f:SetScript("OnEvent", function()
             table.sort(need)
-            print(("|cff4FC778Wick's Mods|r: %s %s WickCore, which is not installed or not switched on. It is in the same download as the rest of the suite: |cffD4C8A1wicksmods.com|r")
+            print(("|cff4FC778Wick's Mods|r: %s %s WickCore, which is not installed or not switched on. It is a free, separate download: search for WickCore on CurseForge, or get it at |cffD4C8A1wicksmods.com|r")
                 :format(table.concat(need, ", "), #need == 1 and "needs" or "need"))
         end)
     end

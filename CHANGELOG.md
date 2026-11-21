@@ -1,5 +1,25 @@
 # Wick's Bags — Changelog
 
+## Unreleased
+
+### Added
+
+- The tooltip of a grey item, or of a crafting material, says when
+  nothing needs it: no quest in your log, and none of the recipes read
+  from your characters. Until a profession window has been opened, it
+  says so and gives no verdict.
+
+### Changed
+
+- The Junk button passes over a grey item a quest in your log still
+  counts.
+
+### Fixed
+
+- A character could appear in its own tooltips as an alt, holding the
+  same bags. Forever does not always name the realm the same way, and
+  the snapshot was filed under each name. They are one entry again.
+
 ## 0.10.0 (2026-11-21)
 
 ### Added

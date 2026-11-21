@@ -2326,7 +2326,9 @@ function BG:FindCheapestJunk()
         local n = ns.GetContainerNumSlots(bag) or 0
         for slot = 1, n do
             local _, count, locked, quality, _, _, link, _, _, itemID = ns.GetContainerItemInfo(bag, slot)
-            if quality == 0 and not locked and itemID then
+            -- A grey a quest in the log still counts is not junk yet.
+            if quality == 0 and not locked and itemID
+                and not (WB.Needed and WB.Needed:IsNeeded(itemID)) then
                 local price = select(11, junkItemInfo(itemID)) or 0
                 count = count or 1
                 local value = price * count

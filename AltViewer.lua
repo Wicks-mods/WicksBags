@@ -104,11 +104,50 @@ local function snapshotBankSlots()
     return out
 end
 
+-- The key this character's snapshot is filed under: "Realm-Name".
+--
+-- Forever does not always name the realm: at one login GetRealmName gives
+-- it, at another an empty string. Filed under each, one character became
+-- two, and showed up in its own tooltips as an alt holding its own bags.
+-- So a login with no realm name uses the entry this character already has
+-- under a named one, and an entry filed under the empty realm is folded
+-- into the named one when it turns up, each half kept from whichever is
+-- newer.
 local function charKey()
     local realm = GetRealmName and GetRealmName() or "Unknown"
+    if type(realm) ~= "string" then realm = "" end
     local char  = UnitName  and UnitName("player") or "Unknown"
-    return realm .. "-" .. char
+    local db = WB.altDB
+    local key, blank = realm .. "-" .. char, "-" .. char
+    if type(db) ~= "table" then return key end
+    if realm == "" then
+        local best, when
+        for k, snap in pairs(db) do
+            if k ~= blank and type(snap) == "table" and k:sub(-#blank) == blank then
+                local t = math.max(snap.bagsLastSeen or 0, snap.bankLastSeen or 0)
+                if not when or t > when then best, when = k, t end
+            end
+        end
+        if best then key = best end
+    end
+    local loose = key ~= blank and db[blank]
+    if type(loose) == "table" then
+        local kept = db[key]
+        if type(kept) ~= "table" then
+            db[key] = loose
+        else
+            if (loose.bagsLastSeen or 0) > (kept.bagsLastSeen or 0) then
+                kept.bags, kept.bagsLastSeen, kept.gold = loose.bags, loose.bagsLastSeen, loose.gold or kept.gold
+            end
+            if (loose.bankLastSeen or 0) > (kept.bankLastSeen or 0) then
+                kept.bank, kept.bankLastSeen = loose.bank, loose.bankLastSeen
+            end
+        end
+        db[blank] = nil
+    end
+    return key
 end
+AV.CharKey = charKey
 
 function AV:SnapshotBags()
     WB.altDB = WB.altDB or {}

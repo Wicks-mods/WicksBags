@@ -244,6 +244,59 @@ function N:IsNeeded(itemID)
 end
 
 -- ============================================================
+-- Nothing needs it
+-- ============================================================
+-- The other half of the answer, for the two kinds of item it is worth
+-- giving: junk, and crafting materials. For anything else (gear, food, a
+-- key) "no recipe uses it" is true and tells nobody anything.
+--
+-- A material is only called unneeded against recipes that have been read.
+-- With none read, the line says to open a profession window: an addon
+-- that calls ore safe to sell because it has not looked would be worse
+-- than one that says nothing.
+local MATERIAL = { [5] = true, [7] = true }   -- reagent, trade goods
+
+local function itemFacts(itemID)
+    local CI = rawget(_G, "C_Item")
+    local instant = (CI and CI.GetItemInfoInstant) or rawget(_G, "GetItemInfoInstant")
+    local classID
+    if instant then
+        local ok, _, _, _, _, _, c = pcall(instant, itemID)
+        if ok then classID = plain(c) end
+    end
+    local quality = CI and CI.GetItemQualityByID and CI.GetItemQualityByID(itemID)
+    if quality == nil and rawget(_G, "GetItemInfo") then quality = select(3, GetItemInfo(itemID)) end
+    return classID, plain(quality)
+end
+
+-- Whose recipes have been read: "Wickid and Altina", or nil for nobody's.
+local function readFrom()
+    local who = {}
+    for name, profs in pairs(recipeDB() or {}) do
+        if type(profs) == "table" and next(profs) ~= nil then who[#who + 1] = name end
+    end
+    if #who == 0 then return nil end
+    table.sort(who)
+    if #who == 1 then return who[1] end
+    return table.concat(who, ", ", 1, #who - 1) .. " and " .. who[#who]
+end
+
+-- One line for an item nothing needs, or nil when there is nothing worth
+-- saying about it.
+function N:Unneeded(itemID)
+    if not itemID or not on() then return nil end
+    if #self:Reasons(itemID) > 0 then return nil end
+    local classID, quality = itemFacts(itemID)
+    if quality == 0 then return "Junk. No quest of yours counts it." end
+    if classID and MATERIAL[classID] then
+        local who = readFrom()
+        if not who then return "No recipes read yet. Open a profession window to check materials." end
+        return ("Not needed by a quest, or by the recipes read from %s."):format(who)
+    end
+    return nil
+end
+
+-- ============================================================
 -- The mark on a slot
 -- ============================================================
 -- A small square in the slot's top left corner: the game's quest yellow
@@ -273,7 +326,15 @@ end
 local function decorate(tooltip, itemID)
     if not itemID or not on() then return end
     local ok, reasons = pcall(N.Reasons, N, itemID)
-    if not ok or #reasons == 0 then return end
+    if not ok then return end
+    if #reasons == 0 then
+        local okU, line = pcall(N.Unneeded, N, itemID)
+        if okU and line then
+            tooltip:AddLine(" ")
+            tooltip:AddLine(line, 0.55, 0.50, 0.42, true)
+        end
+        return
+    end
     local c = WickCore.Chrome.Colors.fel
     tooltip:AddLine(" ")
     tooltip:AddLine("Still needed", c[1], c[2], c[3])

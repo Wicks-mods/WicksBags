@@ -226,15 +226,17 @@ function N:Reasons(itemID)
 end
 
 -- Asked for every slot on every refresh, so it does no formatting.
+-- "quest" when a quest wants it (a quest comes first: those cannot be
+-- bought back), "recipe" when only a recipe does, false when nothing does.
 function N:IsNeeded(itemID)
     if not itemID or not on() then return false end
     refreshQuests()
     local name = itemName(itemID)
-    if name and quests[name] then return true end
+    if name and quests[name] then return "quest" end
     for _, profs in pairs(recipeDB() or {}) do
         if type(profs) == "table" then
             for _, used in pairs(profs) do
-                if type(used) == "table" and used[itemID] then return true end
+                if type(used) == "table" and used[itemID] then return "recipe" end
             end
         end
     end
@@ -244,7 +246,9 @@ end
 -- ============================================================
 -- The mark on a slot
 -- ============================================================
--- A small square in the slot's top left corner, in the look's accent.
+-- A small square in the slot's top left corner: the game's quest yellow
+-- for a quest, the look's accent for a recipe's materials.
+local QUEST_MARK = { 1, 0.82, 0 }
 function N:Mark(slot, itemID)
     if not slot then return end
     local want = itemID and self:IsNeeded(itemID) or false
@@ -258,7 +262,7 @@ function N:Mark(slot, itemID)
         t:SetPoint("TOPLEFT", slot, "TOPLEFT", 2, -2)
         slot._needMark = t
     end
-    local c = WickCore.Chrome.Colors.fel
+    local c = want == "quest" and QUEST_MARK or WickCore.Chrome.Colors.fel
     slot._needMark:SetColorTexture(c[1], c[2], c[3], 1)
     slot._needMark:Show()
 end
@@ -274,7 +278,11 @@ local function decorate(tooltip, itemID)
     tooltip:AddLine(" ")
     tooltip:AddLine("Still needed", c[1], c[2], c[3])
     for _, line in ipairs(reasons) do
-        tooltip:AddLine(line, 0.83, 0.78, 0.63)
+        if line:sub(1, 6) == "Quest:" then
+            tooltip:AddLine(line, QUEST_MARK[1], QUEST_MARK[2], QUEST_MARK[3])
+        else
+            tooltip:AddLine(line, 0.83, 0.78, 0.63)
+        end
     end
 end
 N.Decorate = decorate
